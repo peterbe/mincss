@@ -1,0 +1,38 @@
+a.three:hover,
+a.hundred:link { text-decoration: none }
+
+.container > a.one,
+.container > a.notused,
+input[type="button"]
+{ color: green; }
+
+input[type="search"]::-webkit-search-decoration,
+input[type="reset"]::-webkit-search-decoration,
+{
+  -webkit-appearance: none;
+}
+
+@media (max-width: 900px) {
+  .container .two {
+    color: red;
+  }
+  a.four {
+    color: notused;
+  }
+}
+
+div::-moz-focus-inner,
+button::-moz-focus-inner {
+  padding: 0;
+}
+
+@-webkit-keyframes progress-bar-stripes {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 40px 0;
+  }
+}
+
+@import url(other.css);

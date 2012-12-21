@@ -1,0 +1,6 @@
+body, html { margin: 0; }
+h1, h2, h3 { text-align: center; }
+h3, h4 { font-family: serif; }
+.foobar { delete:me }
+.foobar, h4, h2 { color:red }
+#none, .exists { delete: me-too; }

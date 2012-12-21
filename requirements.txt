@@ -1,0 +1,3 @@
+pyquery
+lxml
+tinycss
