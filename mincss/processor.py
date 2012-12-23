@@ -8,9 +8,7 @@ from pprint import pprint
 import cssmin
 from lxml import etree
 from lxml.cssselect import CSSSelector, SelectorSyntaxError, ExpressionError
-import pyquery
 import urllib
-from collections import OrderedDict
 
 RE_HAS_MEDIA = re.compile("@media")
 RE_FIND_MEDIA = re.compile("(@media.+?)(\{)", re.DOTALL | re.MULTILINE)
@@ -41,7 +39,13 @@ class Processor(object):
         self._bodies = []
 
     def download(self, url):
-        return urllib.urlopen(url).read()
+        print "URL", repr(url)
+        try:
+            response = urllib.urlopen(url)
+            assert response.getcode() == 200, '%s -- %s ' % (url, response.getcode())
+            return response.read()
+        except IOError:
+            raise IOError(url)
 
     def process(self, *urls):
         for url in urls:
@@ -173,6 +177,8 @@ class Processor(object):
         open_braces = 1  # we are starting the character after the first opening brace
         position = match.end()
         content = ""
+        print original_content
+        print "POSITION", position
         while open_braces > 0:
             c = original_content[position]
             if c == "{":
@@ -208,6 +214,8 @@ class Processor(object):
             return parsed.scheme + ':' + href
         if href.startswith('/'):
             return parsed.scheme + '://' + parsed.netloc + href
+        if href.count('://'):
+            return href
         path = parsed.path
         parts = path.split('/')
         parts[-1] = href
