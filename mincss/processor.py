@@ -1,4 +1,6 @@
+import sys
 import collections
+import random
 import re
 from cStringIO import StringIO
 from urlparse import urlparse
@@ -8,12 +10,22 @@ from lxml import etree
 from lxml.cssselect import CSSSelector, SelectorSyntaxError, ExpressionError
 import pyquery
 import urllib
-import tinycss
+from collections import OrderedDict
+
+RE_HAS_MEDIA = re.compile("@media")
+RE_FIND_MEDIA = re.compile("(@media.+?)(\{)", re.DOTALL | re.MULTILINE)
 
 
 EXCEPTIONAL_SELECTORS = (
     'html',
 )
+
+def _get_random_string():
+    p = 'abcdefghijklmopqrstuvwxyz'
+    pl = list(p)
+    random.shuffle(pl)
+    return ''.join(pl)
+
 
 class Processor(object):
 
@@ -98,16 +110,32 @@ class Processor(object):
                 self.blocks[key] = self.download(link_url)
 
     def _process_content(self, content, bodies):
+        # Find all of the unique media queries
 
-        parser = tinycss.make_parser('page3')
-        stylesheet = parser.parse_stylesheet(content)
-        for rule in stylesheet.rules:
-            #print type(rule)
-            #print dir(rule)
-            #print repr(rule.at_keyword)
-            #print repr(rule.selector)
-            #print repr(rule.selector.as_css())
-            selectors = rule.selector.as_css()
+        queries = [(m.group(1), m) for m in RE_FIND_MEDIA.finditer(content)]
+
+        inner_improvements = []
+        # Consolidate the media queries
+        for (query, m) in queries:
+            inner, whole = self._get_contents(m, content)
+            improved_inner = self._process_content(inner, bodies)
+            if improved_inner.strip():
+                improved = query + ' {' + improved_inner + '}'
+            else:
+                improved = ''
+            temp_key = '@%s{}' % _get_random_string()
+            content = content.replace(whole, temp_key)
+            inner_improvements.append(
+                (temp_key, improved)
+            )
+
+        _regex = re.compile('((.*?){(.*?)})', re.DOTALL | re.M)
+
+        def matcher(match):
+            whole, selectors, bulk = match.groups()
+            if selectors.strip().startswith('@'):
+                return whole
+
             improved = selectors
             perfect = True
             for selector in [x for x in
@@ -118,33 +146,42 @@ class Processor(object):
                     pass
                 elif not self._found(bodies, selector.strip()):
                     perfect = False
-                    #print "\t\tREMOVE", repr(selector)
-                    #print "\t\tBEFORE", repr(improved)
                     improved = re.sub('%s,?\s*' % re.escape(selector.strip()), '', improved)
-                    #print "\t\tNOW:", repr(improved)
-                #else:
-                #    print "\t\tFOUND"
 
             if perfect:
-                continue
+                pass
             if improved != selectors:
-                if not improved:
-                    # there's nothing left!
-                    # then delete the whole line
-                    content = re.sub(
-                        '%s\s*{.*?}\s*' % re.escape(selectors),
-                        '',
-                        content
-                    )
+                if not improved.strip():
+                    return ''
                 else:
                     if improved.count(',') == 1:
                         left = [x.strip() for x in improved.split(',')
                                 if x.strip()]
                         if len(left) == 1:
-                            improved = re.sub(',\s*', ' ', improved)
-                            improved = re.sub('\s\s+', ' ', improved)
-                    content = content.replace(selectors, improved.rstrip())
-        return content
+                            #print "\t\tIMPROVED", repr(improved)
+                            improved = re.sub(',\s*$', ' ', improved)
+                            #improved = re.sub('\s\s+', ' ', improved)
+                    whole = whole.replace(selectors, improved)
+            return whole
+
+        fixed = _regex.sub(matcher, content)
+        for original, improved in inner_improvements:
+            fixed = fixed.replace(original, improved)
+        return fixed
+
+    def _get_contents(self, match, original_content):
+        open_braces = 1  # we are starting the character after the first opening brace
+        position = match.end()
+        content = ""
+        while open_braces > 0:
+            c = original_content[position]
+            if c == "{":
+                open_braces += 1
+            if c == "}":
+                open_braces -= 1
+            content += c
+            position += 1
+        return (content[:-1].strip(), original_content[match.start():position])  # the last closing brace gets captured, drop it
 
     def _found(self, bodies, selector):
         selector = selector.split(':')[0]
@@ -158,11 +195,11 @@ class Processor(object):
                 for each in CSSSelector(selector)(body):
                     return True
             except SelectorSyntaxError:
-                print "TROUBLEMAKER"
-                print repr(selector)
+                print >>sys.stderr, "TROUBLEMAKER"
+                print >>sys.stderr, repr(selector)
             except ExpressionError, msg:
-                print "EXPRESSIONERROR"
-                print repr(selector)
+                print >>sys.stderr, "EXPRESSIONERROR"
+                print >>sys.stderr, repr(selector)
         return False
 
     def make_absolute_url(self, url, href):

@@ -97,7 +97,7 @@ class TestMinCSS(unittest.TestCase):
         ok_('@media (max-width: 900px)' in after)
         ok_('.container .two' in after)
         # this one is part of a media query and tinycss currently doesn't support that
-        #ok_('a.four' not in after)
+        ok_('a.four' not in after)
 
         ok_('div::-moz-focus-inner' in after)
         ok_('button::-moz-focus-inner' not in after)
