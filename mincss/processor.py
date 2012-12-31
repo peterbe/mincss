@@ -12,6 +12,7 @@ import urllib
 
 RE_HAS_MEDIA = re.compile("@media")
 RE_FIND_MEDIA = re.compile("(@media.+?)(\{)", re.DOTALL | re.MULTILINE)
+#RE_FIND_MEDIA = re.compile('@media\s*.*?{', re.DOTALL | re.M)
 
 
 EXCEPTIONAL_SELECTORS = (
@@ -39,10 +40,10 @@ class Processor(object):
         self._bodies = []
 
     def download(self, url):
-        print "URL", repr(url)
         try:
             response = urllib.urlopen(url)
-            assert response.getcode() == 200, '%s -- %s ' % (url, response.getcode())
+            if response.getcode() is not None:
+                assert response.getcode() == 200, '%s -- %s ' % (url, response.getcode())
             return response.read()
         except IOError:
             raise IOError(url)
@@ -51,7 +52,6 @@ class Processor(object):
         for url in urls:
             self.process_url(url)
 
-        #pprint(blocks)
         for identifier in sorted(self.blocks.keys()):
             content = self.blocks[identifier]
             processed = self._process_content(content, self._bodies)
@@ -124,28 +124,34 @@ class Processor(object):
             inner, whole = self._get_contents(m, content)
             improved_inner = self._process_content(inner, bodies)
             if improved_inner.strip():
-                improved = query + ' {' + improved_inner + '}'
+                improved = query.rstrip() + ' {' + improved_inner + '}'
             else:
                 improved = ''
             temp_key = '@%s{}' % _get_random_string()
-            content = content.replace(whole, temp_key)
+            #content = content.replace(whole, temp_key)
             inner_improvements.append(
-                (temp_key, improved)
+                (temp_key, whole, improved)
             )
 
+        for temp_key, old, __ in inner_improvements:
+            assert old in content
+            content = content.replace(old, temp_key)
         _regex = re.compile('((.*?){(.*?)})', re.DOTALL | re.M)
 
         def matcher(match):
             whole, selectors, bulk = match.groups()
+            selectors = selectors.split('*/')[-1].lstrip()
             if selectors.strip().startswith('@'):
                 return whole
 
             improved = selectors
             perfect = True
-            for selector in [x for x in
-                             selectors.split(',')
-                             if x.strip()]:
-                #print "\t", repr(selector)
+            selectors_split = [
+                x.strip() for x in
+                selectors.split(',')
+                if x.strip()
+            ]
+            for selector in selectors_split:
                 if selector.strip() in EXCEPTIONAL_SELECTORS:
                     pass
                 elif not self._found(bodies, selector.strip()):
@@ -153,7 +159,7 @@ class Processor(object):
                     improved = re.sub('%s,?\s*' % re.escape(selector.strip()), '', improved)
 
             if perfect:
-                pass
+                return whole
             if improved != selectors:
                 if not improved.strip():
                     return ''
@@ -162,23 +168,22 @@ class Processor(object):
                         left = [x.strip() for x in improved.split(',')
                                 if x.strip()]
                         if len(left) == 1:
-                            #print "\t\tIMPROVED", repr(improved)
                             improved = re.sub(',\s*$', ' ', improved)
                             #improved = re.sub('\s\s+', ' ', improved)
                     whole = whole.replace(selectors, improved)
             return whole
 
         fixed = _regex.sub(matcher, content)
-        for original, improved in inner_improvements:
-            fixed = fixed.replace(original, improved)
+
+        for temp_key, __, improved in inner_improvements:
+            assert temp_key in fixed
+            fixed = fixed.replace(temp_key, improved)
         return fixed
 
     def _get_contents(self, match, original_content):
         open_braces = 1  # we are starting the character after the first opening brace
         position = match.end()
         content = ""
-        print original_content
-        print "POSITION", position
         while open_braces > 0:
             c = original_content[position]
             if c == "{":
@@ -191,12 +196,10 @@ class Processor(object):
 
     def _found(self, bodies, selector):
         selector = selector.split(':')[0]
-        #print "SEARCH FOR", repr(selector)
         if '}' in selector:
             return
 
         for body in bodies:
-            #print "SELECTOR", repr(selector)
             try:
                 for each in CSSSelector(selector)(body):
                     return True

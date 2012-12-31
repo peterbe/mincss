@@ -108,10 +108,15 @@ class TestMinCSS(unittest.TestCase):
         # some day perhaps this can be untangled and parsed too
         ok_('@import url(other.css)' in after)
 
-    def test_buttons_from_bootstrap_hell(self):
+    def test_media_query_simple(self):
         url = 'file://' + html_four
         p = Processor()
         p.process(url)
+
         link = p.links[0]
         after = link.after
-        print repr(after)
+        #print repr(after)
+        ok_('/* A comment */' in after, after)
+        ok_('@media (max-width: 900px) {' in after, after)
+        ok_('.container .two {' in after, after)
+        ok_('a.four' not in after, after)

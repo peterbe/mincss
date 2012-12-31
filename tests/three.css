@@ -12,6 +12,7 @@ input[type="reset"]::-webkit-search-decoration,
   -webkit-appearance: none;
 }
 
+/* A comment */
 @media (max-width: 900px) {
   .container .two {
     color: red;
