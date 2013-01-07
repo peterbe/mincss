@@ -1,6 +1,6 @@
 /* A comment */
 @media (max-width: 900px) {
-  .container .two {
+  .container .two, .container .nine {
     color: red;
   }
   a.four {

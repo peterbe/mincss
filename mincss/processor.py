@@ -116,12 +116,23 @@ class Processor(object):
     def _process_content(self, content, bodies):
         # Find all of the unique media queries
 
-        queries = [(m.group(1), m) for m in RE_FIND_MEDIA.finditer(content)]
+        comments = []
+        _css_comments = re.compile(r'/\*.*?\*/', re.MULTILINE | re.DOTALL)
+        def commentmatcher(match):
+            temp_key = '@%scomment{}' % _get_random_string()
+            whole = match.group()
+            comments.append(
+                (temp_key, whole)
+            )
+            return temp_key
+        content = _css_comments.sub(commentmatcher, content)
 
+        queries = [(m.group(1), m) for m in RE_FIND_MEDIA.finditer(content)]
         inner_improvements = []
         # Consolidate the media queries
         for (query, m) in queries:
             inner, whole = self._get_contents(m, content)
+            print repr(whole)
             improved_inner = self._process_content(inner, bodies)
             if improved_inner.strip():
                 improved = query.rstrip() + ' {' + improved_inner + '}'
@@ -151,12 +162,13 @@ class Processor(object):
                 selectors.split(',')
                 if x.strip()
             ]
+            #selectors_split.sort(lambda x, y: cmp(len(y), len(x)))
             for selector in selectors_split:
                 if selector.strip() in EXCEPTIONAL_SELECTORS:
                     pass
                 elif not self._found(bodies, selector.strip()):
                     perfect = False
-                    improved = re.sub('%s,?\s*' % re.escape(selector.strip()), '', improved)
+                    improved = re.sub('%s,?\s*' % re.escape(selector.strip()), '', improved, count=1)
 
             if perfect:
                 return whole
@@ -178,6 +190,13 @@ class Processor(object):
         for temp_key, __, improved in inner_improvements:
             assert temp_key in fixed
             fixed = fixed.replace(temp_key, improved)
+#        print fixed
+#        print comments
+        for temp_key, whole in comments:
+            # note, `temp_key` might not be in the `fixed` thing because the
+            # comment could have been part of a selector that is entirely
+            # removed
+            fixed = fixed.replace(temp_key, whole)
         return fixed
 
     def _get_contents(self, match, original_content):

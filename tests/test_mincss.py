@@ -11,6 +11,7 @@ html_two = os.path.join(_here, 'two.html')
 html_two_half = os.path.join(_here, 'two_half.html')
 html_three = os.path.join(_here, 'three.html')
 html_four = os.path.join(_here, 'four.html')
+html_five = os.path.join(_here, 'five.html')
 
 
 class TestMinCSS(unittest.TestCase):
@@ -119,4 +120,18 @@ class TestMinCSS(unittest.TestCase):
         ok_('/* A comment */' in after, after)
         ok_('@media (max-width: 900px) {' in after, after)
         ok_('.container .two {' in after, after)
+        ok_('.container .nine {' not in after, after)
         ok_('a.four' not in after, after)
+        print after
+
+    def test_double_classes(self):
+        url = 'file://' + html_five
+        p = Processor()
+        p.process(url)
+
+        link = p.links[0]
+        after = link.after
+        ok_('input.span6' in after)
+        ok_('.uneditable-input.span9' in after)
+        ok_('.uneditable-{' not in after)
+        ok_('.uneditable-input.span3' not in after)
