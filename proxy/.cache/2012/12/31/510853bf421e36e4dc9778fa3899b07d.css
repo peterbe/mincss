@@ -1,0 +1,94 @@
+html, body {
+    background-color: #fff;
+}
+body {
+    padding-top: 40px;
+}
+.content {
+    padding: 20px;
+    margin: 0 -20px;
+}
+.footer-style {
+    width: 100%;
+    background-color: #333;
+    height: 30px;
+    text-align: center;
+    padding-top: 10px;
+}
+.footer-text {
+    color: white;
+    font-weight: normal;
+}
+a.bold {
+    font-weight: bold;
+}
+
+/* general fix for bootstrap */
+input { color:rgb(70,70,70); }
+
+
+
+  .navbar li.navbar-search-link {
+    display: none;
+  }
+
+
+.navbar {
+  opacity: 0.95;
+  box-shadow: 0px 10px 17px rgba(46, 46, 46, 0.7);
+}
+
+/* Landscape phones and down */
+@media (max-width: 480px) {.container,
+  .navbar-fixed-top .container,
+  {
+    width: 460px;
+  }
+
+  li.navbar-search-link {
+    display: block;
+  }
+  .navbar-search {
+    display: none;
+  }
+  .navbar li.navbar-search-link {
+    display: block;
+  }
+  h2 {
+    font-size: 20px;
+    line-height: 26px;
+  }}
+/* Landscape phones and down */
+@media (max-width: 320px) {.container,
+  .navbar-fixed-top .container,
+  {
+    width: 310px;
+  }
+  .navbar .nav > li > a {
+    padding: 5px;
+  }
+  .navbar li.navbar-search-link {
+    display: block;
+  }
+
+  h2 {
+    font-size: 15px;
+    line-height: 16px;
+  }}
+
+/* Landscape phone to portrait tablet */
+@media (max-width: 767px) {.container,
+  .navbar-fixed-top .container,
+  {
+    width: 760px;
+  }}
+
+/* Portrait tablet to landscape and desktop */
+@media (min-width: 768px) and (max-width: 979px) {.container,
+  .navbar-fixed-top .container,
+  {
+    width: 760px;
+  }}
+
+/* Large desktop */
+
