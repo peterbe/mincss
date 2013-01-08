@@ -6,6 +6,14 @@ a.hundred:link { text-decoration: none }
 input[type="button"]
 { color: green; }
 
+:-moz-placeholder {
+  color: #999999;
+}
+
+::-webkit-input-placeholder {
+  color: #999999;
+}
+
 input[type="search"]::-webkit-search-decoration,
 input[type="reset"]::-webkit-search-decoration,
 {

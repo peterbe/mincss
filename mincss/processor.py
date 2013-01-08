@@ -13,6 +13,7 @@ import urllib
 RE_HAS_MEDIA = re.compile("@media")
 RE_FIND_MEDIA = re.compile("(@media.+?)(\{)", re.DOTALL | re.MULTILINE)
 #RE_FIND_MEDIA = re.compile('@media\s*.*?{', re.DOTALL | re.M)
+RE_NESTS = re.compile('@(-|keyframes).*?({)', re.DOTALL | re.M)
 
 
 EXCEPTIONAL_SELECTORS = (
@@ -127,12 +128,33 @@ class Processor(object):
             return temp_key
         content = _css_comments.sub(commentmatcher, content)
 
+        nests = [(m.group(1), m) for m in RE_NESTS.finditer(content)]
+        _nests = []
+        for start, m in nests:
+            #print (block, m)
+            __, whole = self._get_contents(m, content)
+            #print "WHOLE"
+            #print repr(whole)
+            _nests.append(whole)
+            #content = content.replace(whole, 'XXX')
+            #print
+        # once all nests have been spotted, temporarily replace them
+
+        #print content
+        #print _nests
+
         queries = [(m.group(1), m) for m in RE_FIND_MEDIA.finditer(content)]
         inner_improvements = []
+
+        for nest in _nests:
+            temp_key = '@%snest{}' % _get_random_string()
+            inner_improvements.append(
+                (temp_key, nest, nest)
+            )
+
         # Consolidate the media queries
         for (query, m) in queries:
             inner, whole = self._get_contents(m, content)
-            print repr(whole)
             improved_inner = self._process_content(inner, bodies)
             if improved_inner.strip():
                 improved = query.rstrip() + ' {' + improved_inner + '}'
@@ -147,7 +169,11 @@ class Processor(object):
         for temp_key, old, __ in inner_improvements:
             assert old in content
             content = content.replace(old, temp_key)
+
         _regex = re.compile('((.*?){(.*?)})', re.DOTALL | re.M)
+
+        _already_found = set()
+        _already_tried = set()
 
         def matcher(match):
             whole, selectors, bulk = match.groups()
@@ -160,15 +186,27 @@ class Processor(object):
             selectors_split = [
                 x.strip() for x in
                 selectors.split(',')
-                if x.strip()
+                if x.strip() and not x.strip().startswith(':')
             ]
             #selectors_split.sort(lambda x, y: cmp(len(y), len(x)))
             for selector in selectors_split:
-                if selector.strip() in EXCEPTIONAL_SELECTORS:
-                    pass
-                elif not self._found(bodies, selector.strip()):
+                s = selector.strip()
+                if s in EXCEPTIONAL_SELECTORS:
+                    continue
+
+                if s in _already_found:
+                    found = True
+                elif s in _already_tried:
+                    found = False
+                else:
+                    found = self._found(bodies, s)
+
+                if found:
+                    _already_found.add(s)
+                else:
+                    _already_tried.add(s)
                     perfect = False
-                    improved = re.sub('%s,?\s*' % re.escape(selector.strip()), '', improved, count=1)
+                    improved = re.sub('%s,?\s*' % re.escape(s), '', improved, count=1)
 
             if perfect:
                 return whole
@@ -176,12 +214,7 @@ class Processor(object):
                 if not improved.strip():
                     return ''
                 else:
-                    if improved.count(',') == 1:
-                        left = [x.strip() for x in improved.split(',')
-                                if x.strip()]
-                        if len(left) == 1:
-                            improved = re.sub(',\s*$', ' ', improved)
-                            #improved = re.sub('\s\s+', ' ', improved)
+                    improved = re.sub(',\s*$', ' ', improved)
                     whole = whole.replace(selectors, improved)
             return whole
 
@@ -190,8 +223,6 @@ class Processor(object):
         for temp_key, __, improved in inner_improvements:
             assert temp_key in fixed
             fixed = fixed.replace(temp_key, improved)
-#        print fixed
-#        print comments
         for temp_key, whole in comments:
             # note, `temp_key` might not be in the `fixed` thing because the
             # comment could have been part of a selector that is entirely
@@ -214,7 +245,11 @@ class Processor(object):
         return (content[:-1].strip(), original_content[match.start():position])  # the last closing brace gets captured, drop it
 
     def _found(self, bodies, selector):
+        r = self.__found(bodies, selector)
+        return r
+    def __found(self, bodies, selector):
         selector = selector.split(':')[0]
+
         if '}' in selector:
             return
 

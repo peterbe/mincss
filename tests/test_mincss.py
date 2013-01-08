@@ -12,6 +12,7 @@ html_two_half = os.path.join(_here, 'two_half.html')
 html_three = os.path.join(_here, 'three.html')
 html_four = os.path.join(_here, 'four.html')
 html_five = os.path.join(_here, 'five.html')
+html_six = os.path.join(_here, 'six.html')
 
 
 class TestMinCSS(unittest.TestCase):
@@ -99,6 +100,8 @@ class TestMinCSS(unittest.TestCase):
         ok_('.container .two' in after)
         ok_('a.four' not in after)
 
+        ok_('::-webkit-input-placeholder' in after)
+        ok_(':-moz-placeholder {' in after)
         ok_('div::-moz-focus-inner' in after)
         ok_('button::-moz-focus-inner' not in after)
 
@@ -122,16 +125,26 @@ class TestMinCSS(unittest.TestCase):
         ok_('.container .two {' in after, after)
         ok_('.container .nine {' not in after, after)
         ok_('a.four' not in after, after)
-        print after
 
     def test_double_classes(self):
         url = 'file://' + html_five
         p = Processor()
         p.process(url)
 
-        link = p.links[0]
-        after = link.after
+        after = p.links[0].after
+        eq_(after.count('{'), after.count('}'))
         ok_('input.span6' in after)
         ok_('.uneditable-input.span9' in after)
         ok_('.uneditable-{' not in after)
         ok_('.uneditable-input.span3' not in after)
+
+    def test_complicated_keyframes(self):
+        url = 'file://' + html_six
+        p = Processor()
+        p.process(url)
+
+        after = p.inlines[0].after
+        eq_(after.count('{'), after.count('}'))
+        ok_('.pull-left' in after)
+        ok_('.pull-right' in after)
+        ok_('.pull-middle' not in after)
