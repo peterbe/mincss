@@ -53,6 +53,7 @@ def proxy(path):
 
     # lxml inserts a doctype if none exists, so only include it in
     # the root if it was in the original html.
+    was_doctype = tree.docinfo.doctype
     root = tree if stripped.startswith(tree.docinfo.doctype) else page
 
     links = dict((x.href, x) for x in p.links)
@@ -62,21 +63,7 @@ def proxy(path):
             link.attrib.get('rel', '') == 'stylesheet' or
             link.attrib['href'].lower().endswith('.css')
         ):
-            #line = all_lines[link.sourceline - 1]
-            #link_html = _find_link(line, link.attrib['href'])
-            #html = html.replace(
-            #    link_html,
-            #    '<style type="text/css">\n%s\n</style>' %
-            #    links[link.attrib['href']].after
-            #)
-            #print dir(link)
-            #print link.sourceline
-            #print repr()
-            #print link.tag
-            #print link.base
-            #print
-            #print link.attrib['href']
-            hash_ = hashlib.md5(url + link.attrib['href']).hexdigest()
+            hash_ = hashlib.md5(url + link.attrib['href']).hexdigest()[:7]
             now = datetime.date.today()
             destination_dir = os.path.join(
                 CACHE_DIR,
@@ -92,28 +79,12 @@ def proxy(path):
 
             link.attrib['href'] = '/cache%s' % destination.replace(CACHE_DIR, '')
 
-            #print links[link.attrib['href']]
-            #print dir(link)
-            #inline = etree.Element('style', type="text/css")
-            #inline.text = InlineElement(links[link.attrib['href']].after)
-            #inline.text = etree.(links[link.attrib['href']].after)
-            #link.getparent().replace(link, inline)
-            #page.replace(link, inline)
-
     for img in CSSSelector('img, script')(page):
         #print img.attrib['src'], url, path
         orig_src = urlparse.urljoin(url, img.attrib['src'])
         img.attrib['src'] = orig_src
 
-    #for each in p.links:
-        #print dir(each)
-    #    print (each.href, each.url)
-
-    # download the HTML
-    #response = urllib.urlopen(url)
-    #html = response.read()
-    #return html
-    return etree.tostring(page)
+    return (was_doctype and was_doctype or '') + '\n' + etree.tostring(page)
 
 
 def mkdir(newdir):
