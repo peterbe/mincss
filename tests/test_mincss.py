@@ -5,20 +5,14 @@ from nose.tools import eq_, ok_
 from mincss.processor import Processor
 
 
-_here = os.path.dirname(__file__)
-html_one = os.path.join(_here, 'one.html')
-html_two = os.path.join(_here, 'two.html')
-html_two_half = os.path.join(_here, 'two_half.html')
-html_three = os.path.join(_here, 'three.html')
-html_four = os.path.join(_here, 'four.html')
-html_five = os.path.join(_here, 'five.html')
-html_six = os.path.join(_here, 'six.html')
+HERE = os.path.dirname(__file__)
 
 
 class TestMinCSS(unittest.TestCase):
 
     def test_just_inline(self):
-        url = 'file://' + html_one
+        html = os.path.join(HERE, 'one.html')
+        url = 'file://' + html
         p = Processor()
         p.process(url)
         # on line 7 there inline css starts
@@ -38,7 +32,8 @@ class TestMinCSS(unittest.TestCase):
             eq_(line.strip(), lines_after[i].strip())
 
     def test_just_one_link(self):
-        url = 'file://' + html_two
+        html = os.path.join(HERE, 'two.html')
+        url = 'file://' + html
         p = Processor()
         p.process(url)
         # two.html only has 1 link CSS ref
@@ -58,8 +53,10 @@ class TestMinCSS(unittest.TestCase):
             eq_(line.strip(), lines_after[i].strip())
 
     def test_one_link_two_different_pages(self):
-        url1 = 'file://' + html_two
-        url2 = 'file://' + html_two_half
+        html = os.path.join(HERE, 'two.html')
+        url1 = 'file://' + html
+        html_half = os.path.join(HERE, 'two_half.html')
+        url2 = 'file://' + html_half
         p = Processor()
         p.process(url1, url2)
         # two.html only has 1 link CSS ref
@@ -80,7 +77,8 @@ class TestMinCSS(unittest.TestCase):
             eq_(line.strip(), lines_after[i].strip())
 
     def test_pseudo_selectors_hell(self):
-        url = 'file://' + html_three
+        html = os.path.join(HERE, 'three.html')
+        url = 'file://' + html
         p = Processor()
         p.process(url)
         # two.html only has 1 link CSS ref
@@ -113,7 +111,8 @@ class TestMinCSS(unittest.TestCase):
         ok_('@import url(other.css)' in after)
 
     def test_media_query_simple(self):
-        url = 'file://' + html_four
+        html = os.path.join(HERE, 'four.html')
+        url = 'file://' + html
         p = Processor()
         p.process(url)
 
@@ -127,7 +126,8 @@ class TestMinCSS(unittest.TestCase):
         ok_('a.four' not in after, after)
 
     def test_double_classes(self):
-        url = 'file://' + html_five
+        html = os.path.join(HERE, 'five.html')
+        url = 'file://' + html
         p = Processor()
         p.process(url)
 
@@ -139,7 +139,8 @@ class TestMinCSS(unittest.TestCase):
         ok_('.uneditable-input.span3' not in after)
 
     def test_complicated_keyframes(self):
-        url = 'file://' + html_six
+        html = os.path.join(HERE, 'six.html')
+        url = 'file://' + html
         p = Processor()
         p.process(url)
 
@@ -148,3 +149,21 @@ class TestMinCSS(unittest.TestCase):
         ok_('.pull-left' in after)
         ok_('.pull-right' in after)
         ok_('.pull-middle' not in after)
+
+    def test_ignore_annotations(self):
+        html = os.path.join(HERE, 'seven.html')
+        url = 'file://' + html
+        p = Processor()
+        p.process(url)
+
+        after = p.inlines[0].after
+        eq_(after.count('{'), after.count('}'))
+        ok_('/* Leave this comment as is */' in after)
+        ok_('/* Lastly leave this as is */' in after)
+        ok_('/* Also stick around */' in after)
+        ok_('/* leave untouched */' in after)
+        ok_('.north' in after)
+        ok_('.south' in after)
+        ok_('.east' not in after)
+        ok_('.west' in after)
+        ok_('no mincss' not in after)

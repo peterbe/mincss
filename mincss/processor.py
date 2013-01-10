@@ -119,29 +119,58 @@ class Processor(object):
 
         comments = []
         _css_comments = re.compile(r'/\*.*?\*/', re.MULTILINE | re.DOTALL)
+        no_mincss_blocks = []
         def commentmatcher(match):
-            temp_key = '@%scomment{}' % _get_random_string()
             whole = match.group()
+            # are we in a block or outside
+            #p = content.find(match.group())
+            nearest_close = content[:match.start()].rfind('}')
+            nearest_open = content[:match.start()].rfind('{')
+            next_close = content[match.end():].find('}')
+            next_open = content[match.end():].find('{')
+
+            outside = False
+            if nearest_open == -1 and nearest_close == -1:
+                # it's at the very beginning of the file
+                outside = True
+            elif next_open == -1 and next_close == -1:
+                # it's at the very end of the file
+                outside = True
+            elif nearest_close == -1 and nearest_open > -1:
+                outside = False
+            elif nearest_close > -1 and nearest_open > -1:
+                outside = nearest_close > nearest_open
+            else:
+                raise Exception("can this happen?!")
+                print repr(match.group())
+                print "nearest", (nearest_close, nearest_open)
+                print nearest_close < nearest_open
+                #print "next", (next_close, next_open)
+                print
+
+            if outside:
+                temp_key = '@%scomment{}' % _get_random_string()
+            else:
+                temp_key = '%sinnercomment' % _get_random_string()
+                if re.findall(r'\bno mincss\b', match.group()):
+                    no_mincss_blocks.append(temp_key)
+
             comments.append(
                 (temp_key, whole)
             )
             return temp_key
         content = _css_comments.sub(commentmatcher, content)
+        if no_mincss_blocks:
+            no_mincss_regex = re.compile('|'.join(re.escape(x) for x in no_mincss_blocks))
+        else:
+            no_mincss_regex = None
 
         nests = [(m.group(1), m) for m in RE_NESTS.finditer(content)]
         _nests = []
         for start, m in nests:
-            #print (block, m)
             __, whole = self._get_contents(m, content)
-            #print "WHOLE"
-            #print repr(whole)
             _nests.append(whole)
-            #content = content.replace(whole, 'XXX')
-            #print
         # once all nests have been spotted, temporarily replace them
-
-        #print content
-        #print _nests
 
         queries = [(m.group(1), m) for m in RE_FIND_MEDIA.finditer(content)]
         inner_improvements = []
@@ -180,6 +209,8 @@ class Processor(object):
             selectors = selectors.split('*/')[-1].lstrip()
             if selectors.strip().startswith('@'):
                 return whole
+            if no_mincss_regex and no_mincss_regex.findall(bulk):
+                return no_mincss_regex.sub('', whole)
 
             improved = selectors
             perfect = True
@@ -188,7 +219,6 @@ class Processor(object):
                 selectors.split(',')
                 if x.strip() and not x.strip().startswith(':')
             ]
-            #selectors_split.sort(lambda x, y: cmp(len(y), len(x)))
             for selector in selectors_split:
                 s = selector.strip()
                 if s in EXCEPTIONAL_SELECTORS:
@@ -199,6 +229,7 @@ class Processor(object):
                 elif s in _already_tried:
                     found = False
                 else:
+
                     found = self._found(bodies, s)
 
                 if found:
@@ -245,7 +276,9 @@ class Processor(object):
         return (content[:-1].strip(), original_content[match.start():position])  # the last closing brace gets captured, drop it
 
     def _found(self, bodies, selector):
+        #print "SELECTOR", repr(selector)
         r = self.__found(bodies, selector)
+        #print "R", repr(r)
         return r
     def __found(self, bodies, selector):
         selector = selector.split(':')[0]
