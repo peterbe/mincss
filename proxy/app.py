@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 import datetime
 import os
+import functools
 import hashlib
 import re
 import urllib
@@ -32,6 +33,7 @@ def cache(path):
         return response
         #return
 
+
 @app.route("/<path:path>")
 def proxy(path):
     if path == 'favicon.ico':
@@ -42,9 +44,39 @@ def proxy(path):
     html = urllib.urlopen(url).read()
     p = Processor(debug=False)
     p.process(url)
+
+
+    css_url_regex = re.compile('url\(([^\)]+)\)')
+
+    def css_url_replacer(match, href=None):
+        filename = match.groups()[0]
+        bail = match.group()
+
+        if ((filename.startswith('"') and filename.endswith('"')) or
+            (filename.startswith("'") and filename.endswith("'"))):
+            filename = filename[1:-1]
+        if 'data:image' in filename or '://' in filename:
+            return bail
+        if filename == '.':
+            # this is a known IE hack in CSS
+            return bail
+
+        if not filename.startswith('/'):
+            filename = os.path.normpath(
+                os.path.join(
+                    os.path.dirname(href),
+                    filename
+                )
+            )
+
+        new_filename = urlparse.urljoin(url, filename)
+        return 'url("%s")' % new_filename
+
     for each in p.inlines:
         # this should be using CSSSelector instead
-        html = html.replace(each.before, each.after)
+        new_inline = each.after
+        new_inline = css_url_regex.sub(css_url_replacer, new_inline)
+        html = html.replace(each.before, new_inline)
 
     parser = etree.HTMLParser()
     stripped = html.strip()
@@ -63,6 +95,8 @@ def proxy(path):
             link.attrib.get('rel', '') == 'stylesheet' or
             link.attrib['href'].lower().endswith('.css')
         ):
+            print "URL", repr(url)
+            print "HREF", repr(link.attrib['href'])
             hash_ = hashlib.md5(url + link.attrib['href']).hexdigest()[:7]
             now = datetime.date.today()
             destination_dir = os.path.join(
@@ -73,14 +107,18 @@ def proxy(path):
             )
             mkdir(destination_dir)
 
+            new_css = links[link.attrib['href']].after
+            new_css = css_url_regex.sub(
+                functools.partial(css_url_replacer, href=link.attrib['href']),
+                new_css
+            )
             destination = os.path.join(destination_dir, hash_ + '.css')
             with open(destination, 'w') as f:
-                f.write(links[link.attrib['href']].after)
+                f.write(new_css)
 
             link.attrib['href'] = '/cache%s' % destination.replace(CACHE_DIR, '')
 
     for img in CSSSelector('img, script')(page):
-        #print img.attrib['src'], url, path
         orig_src = urlparse.urljoin(url, img.attrib['src'])
         img.attrib['src'] = orig_src
 
