@@ -45,7 +45,8 @@ class Processor(object):
             response = urllib.urlopen(url)
             if response.getcode() is not None:
                 assert response.getcode() == 200, '%s -- %s ' % (url, response.getcode())
-            return response.read()
+            html = response.read()
+            return unicode(html, 'utf-8')
         except IOError:
             raise IOError(url)
 
@@ -86,9 +87,15 @@ class Processor(object):
         tree = etree.fromstring(stripped, parser).getroottree()
         page = tree.getroot()
 
+        #print repr(stripped[:100])
         # lxml inserts a doctype if none exists, so only include it in
         # the root if it was in the original html.
-        root = tree if stripped.startswith(tree.docinfo.doctype) else page
+        #print repr(tree.docinfo.doctype)
+        if stripped.startswith(tree.docinfo.doctype):
+            root = tree
+        else:
+            root = page
+        #root = tree if stripped.startswith(tree.docinfo.doctype) else page
 
         if page is None:
             print repr(html)
