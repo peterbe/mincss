@@ -31,18 +31,17 @@ def _get_random_string():
 
 class Processor(object):
 
-    def __init__(self, debug=False, exclude_pseudoclasses=True):
+    def __init__(self, debug=False):
         self.debug = debug
         self.tab = ' ' * 4
         self.blocks = {}
-        self.keep = collections.defaultdict(list)
-        self.blocks_bytes = {}
-        self.exclude_pseudoclasses = exclude_pseudoclasses
+        #self.keep = collections.defaultdict(list)
+        #self.blocks_bytes = {}
         self.inlines = []
         self.links = []
         self._bodies = []
 
-    def download(self, url):
+    def _download(self, url):
         try:
             response = urllib.urlopen(url)
             if response.getcode() is not None:
@@ -57,7 +56,7 @@ class Processor(object):
 
     def process(self, *urls):
         for url in urls:
-            self.process_url(url)
+            self._process_url(url)
 
         for identifier in sorted(self.blocks.keys()):
             content = self.blocks[identifier]
@@ -85,8 +84,8 @@ class Processor(object):
                     )
                 )
 
-    def process_url(self, url):
-        html = self.download(url)
+    def _process_url(self, url):
+        html = self._download(url)
         parser = etree.HTMLParser()
         stripped = html.strip()
         tree = etree.fromstring(stripped, parser).getroottree()
@@ -122,9 +121,9 @@ class Processor(object):
                 link.attrib.get('rel', '') == 'stylesheet' or
                 link.attrib['href'].lower().endswith('.css')
             ):
-                link_url = self.make_absolute_url(url, link.attrib['href'])
+                link_url = self._make_absolute_url(url, link.attrib['href'])
                 key = (link_url, link.attrib['href'])
-                self.blocks[key] = self.download(link_url)
+                self.blocks[key] = self._download(link_url)
 
     def _process_content(self, content, bodies):
         # Find all of the unique media queries
@@ -325,7 +324,7 @@ class Processor(object):
                 print >>sys.stderr, repr(selector)
         return False
 
-    def make_absolute_url(self, url, href):
+    def _make_absolute_url(self, url, href):
         parsed = urlparse(url)
         if href.startswith('//'):
             return parsed.scheme + ':' + href
