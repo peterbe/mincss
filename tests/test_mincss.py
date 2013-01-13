@@ -167,3 +167,13 @@ class TestMinCSS(unittest.TestCase):
         ok_('.east' not in after)
         ok_('.west' in after)
         ok_('no mincss' not in after)
+
+    def test_non_ascii_html(self):
+        html = os.path.join(HERE, 'eight.html')
+        url = 'file://' + html
+        p = Processor()
+        p.process(url)
+
+        after = p.inlines[0].after
+        ok_(isinstance(after, unicode))
+        ok_(u'Varf\xf6r st\xe5r det h\xe4r?' in after)
