@@ -1,4 +1,3 @@
-from pprint import pprint
 import os
 import unittest
 from nose.tools import eq_, ok_

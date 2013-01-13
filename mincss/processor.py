@@ -2,23 +2,25 @@ import sys
 import collections
 import random
 import re
-from cStringIO import StringIO
 from urlparse import urlparse
-from pprint import pprint
-import cssmin
 from lxml import etree
 from lxml.cssselect import CSSSelector, SelectorSyntaxError, ExpressionError
 import urllib
 
-RE_HAS_MEDIA = re.compile("@media")
+#RE_HAS_MEDIA = re.compile("@media")
 RE_FIND_MEDIA = re.compile("(@media.+?)(\{)", re.DOTALL | re.MULTILINE)
-#RE_FIND_MEDIA = re.compile('@media\s*.*?{', re.DOTALL | re.M)
 RE_NESTS = re.compile('@(-|keyframes).*?({)', re.DOTALL | re.M)
 
 
 EXCEPTIONAL_SELECTORS = (
     'html',
 )
+
+
+class ParserError(Exception):
+    """happens we fail to parse the HTML"""
+    pass
+
 
 def _get_random_string():
     p = 'abcdefghijklmopqrstuvwxyz'
@@ -44,7 +46,10 @@ class Processor(object):
         try:
             response = urllib.urlopen(url)
             if response.getcode() is not None:
-                assert response.getcode() == 200, '%s -- %s ' % (url, response.getcode())
+                assert (
+                    response.getcode() == 200,
+                    '%s -- %s ' % (url, response.getcode())
+                )
             html = response.read()
             return unicode(html, 'utf-8')
         except IOError:
@@ -91,10 +96,10 @@ class Processor(object):
         # lxml inserts a doctype if none exists, so only include it in
         # the root if it was in the original html.
         #print repr(tree.docinfo.doctype)
-        if stripped.startswith(tree.docinfo.doctype):
-            root = tree
-        else:
-            root = page
+        #if stripped.startswith(tree.docinfo.doctype):
+        #    root = tree
+        #else:
+        #    root = page
         #root = tree if stripped.startswith(tree.docinfo.doctype) else page
 
         if page is None:
@@ -127,6 +132,7 @@ class Processor(object):
         comments = []
         _css_comments = re.compile(r'/\*.*?\*/', re.MULTILINE | re.DOTALL)
         no_mincss_blocks = []
+
         def commentmatcher(match):
             whole = match.group()
             # are we in a block or outside
@@ -168,7 +174,9 @@ class Processor(object):
             return temp_key
         content = _css_comments.sub(commentmatcher, content)
         if no_mincss_blocks:
-            no_mincss_regex = re.compile('|'.join(re.escape(x) for x in no_mincss_blocks))
+            no_mincss_regex = re.compile(
+                '|'.join(re.escape(x) for x in no_mincss_blocks)
+            )
         else:
             no_mincss_regex = None
 
@@ -244,7 +252,12 @@ class Processor(object):
                 else:
                     _already_tried.add(s)
                     perfect = False
-                    improved = re.sub('%s,?\s*' % re.escape(s), '', improved, count=1)
+                    improved = re.sub(
+                        '%s,?\s*' % re.escape(s),
+                        '',
+                        improved,
+                        count=1
+                    )
 
             if perfect:
                 return whole
@@ -269,7 +282,8 @@ class Processor(object):
         return fixed
 
     def _get_contents(self, match, original_content):
-        open_braces = 1  # we are starting the character after the first opening brace
+        # we are starting the character after the first opening brace
+        open_braces = 1
         position = match.end()
         content = ""
         while open_braces > 0:
@@ -280,17 +294,23 @@ class Processor(object):
                 open_braces -= 1
             content += c
             position += 1
-        return (content[:-1].strip(), original_content[match.start():position])  # the last closing brace gets captured, drop it
+        return (
+            content[:-1].strip(),
+            # the last closing brace gets captured, drop it
+            original_content[match.start():position]
+        )
 
     def _found(self, bodies, selector):
         #print "SELECTOR", repr(selector)
         r = self.__found(bodies, selector)
         #print "R", repr(r)
         return r
+
     def __found(self, bodies, selector):
         selector = selector.split(':')[0]
 
         if '}' in selector:
+            # XXX does this ever happen any more?
             return
 
         for body in bodies:
@@ -300,7 +320,7 @@ class Processor(object):
             except SelectorSyntaxError:
                 print >>sys.stderr, "TROUBLEMAKER"
                 print >>sys.stderr, repr(selector)
-            except ExpressionError, msg:
+            except ExpressionError:
                 print >>sys.stderr, "EXPRESSIONERROR"
                 print >>sys.stderr, repr(selector)
         return False

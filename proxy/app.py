@@ -8,7 +8,7 @@ import urllib
 import urlparse
 
 from lxml import etree
-from lxml.cssselect import CSSSelector, SelectorSyntaxError, ExpressionError
+from lxml.cssselect import CSSSelector
 
 from flask import Flask, abort, make_response, request
 app = Flask(__name__)
@@ -16,7 +16,7 @@ app = Flask(__name__)
 try:
     from mincss.processor import Processor
 except ImportError:
-    import sys, os
+    import sys
     sys.path.insert(0, os.path.normpath('../'))
     from mincss.processor import Processor
 
@@ -25,6 +25,7 @@ CACHE_DIR = os.path.join(
     os.path.dirname(__file__),
     '.cache'
 )
+
 
 @app.route("/cache/<path:path>")
 def cache(path):
@@ -59,8 +60,10 @@ def proxy(path):
         filename = match.groups()[0]
         bail = match.group()
 
-        if ((filename.startswith('"') and filename.endswith('"')) or
-            (filename.startswith("'") and filename.endswith("'"))):
+        if (
+            (filename.startswith('"') and filename.endswith('"')) or
+            (filename.startswith("'") and filename.endswith("'"))
+        ):
             filename = filename[1:-1]
         if 'data:image' in filename or '://' in filename:
             return bail
@@ -96,10 +99,10 @@ def proxy(path):
     # lxml inserts a doctype if none exists, so only include it in
     # the root if it was in the original html.
     was_doctype = tree.docinfo.doctype
-    root = tree if stripped.startswith(tree.docinfo.doctype) else page
+    #root = tree if stripped.startswith(tree.docinfo.doctype) else page
 
     links = dict((x.href, x) for x in p.links)
-    all_lines = html.splitlines()
+    #all_lines = html.splitlines()
     for link in CSSSelector('link')(page):
         if (
             link.attrib.get('rel', '') == 'stylesheet' or
@@ -109,9 +112,9 @@ def proxy(path):
             now = datetime.date.today()
             destination_dir = os.path.join(
                 CACHE_DIR,
-                `now.year`,
-                `now.month`,
-                `now.day`,
+                str(now.year),
+                str(now.month),
+                str(now.day),
             )
             mkdir(destination_dir)
 
@@ -122,14 +125,19 @@ def proxy(path):
                 links[link.attrib['href']].after
             ))
             new_css = css_url_regex.sub(
-                functools.partial(css_url_replacer, href=link.attrib['href']),
+                functools.partial(
+                    css_url_replacer,
+                    href=link.attrib['href']
+                ),
                 new_css
             )
             destination = os.path.join(destination_dir, hash_ + '.css')
             with open(destination, 'w') as f:
                 f.write(new_css)
 
-            link.attrib['href'] = '/cache%s' % destination.replace(CACHE_DIR, '')
+            link.attrib['href'] = (
+                '/cache%s' % destination.replace(CACHE_DIR, '')
+            )
 
     for img in CSSSelector('img, script')(page):
         if 'src' in img.attrib:
@@ -140,7 +148,12 @@ def proxy(path):
         if 'href' not in a.attrib:
             continue
         href = a.attrib['href']
-        if '://' in href or href.startswith('#') or href.startswith('javascript:'):
+
+        if (
+            '://' in href or
+            href.startswith('#') or
+            href.startswith('javascript:')
+        ):
             continue
 
         if href.startswith('/'):
@@ -151,7 +164,10 @@ def proxy(path):
             )
         #else:
         if collect_stats:
-            a.attrib['href'] = add_collect_stats_qs(a.attrib['href'], collect_stats)
+            a.attrib['href'] = add_collect_stats_qs(
+                a.attrib['href'],
+                collect_stats
+            )
 
     html = etree.tostring(page)
     if collect_stats:
@@ -168,7 +184,8 @@ def proxy(path):
 
 def add_collect_stats_qs(url, value):
     """
-    if :url is `page.html?foo=bar` return `page.html?foo=bar&MINCSS_STATS=:value`
+    if :url is `page.html?foo=bar`
+    return `page.html?foo=bar&MINCSS_STATS=:value`
     """
     if '?' in url:
         url += '&'
@@ -176,6 +193,7 @@ def add_collect_stats_qs(url, value):
         url += '?'
     url += 'MINCSS_STATS=%s' % value
     return url
+
 
 def summorize_stats_html(stats):
     style = """
@@ -201,28 +219,37 @@ def summorize_stats_html(stats):
     for each, before, after in stats:
         total_before += len(before)
         total_after += len(after)
-        lis.append("""<li>
-          <strong>%s</strong>
-          <ul>
-            <li>before: %s</li>
-            <li>after: %s</li>
-          </ul>
-        </li>""" % (each, sizeof(len(before)), sizeof(len(after)))
+        lis.append(
+            """<li>
+            <strong>%s</strong>
+            <ul>
+              <li>before: %s</li>
+              <li>after: %s</li>
+            </ul>
+            </li>""" %
+            (
+                each,
+                sizeof(len(before)),
+                sizeof(len(after))
+            )
         )
 
-
-    lis.append("""<li>
-      <strong>TOTAL</strong>
-      <ul>
-        <li style="font-weigt:bold">before: %s</li>
-        <li style="font-weigt:bold">after: %s</li>
-        <li style="font-weigt:bold">saving: %s</li>
-      </ul>
-    </li>""" % (sizeof(total_before),
-                sizeof(total_after),
-                sizeof(total_before - total_after))
+    lis.append(
+        """<li>
+        <strong>TOTAL</strong>
+        <ul>
+          <li style="font-weigt:bold">before: %s</li>
+          <li style="font-weigt:bold">after: %s</li>
+          <li style="font-weigt:bold">saving: %s</li>
+        </ul>
+        </li>""" %
+        (
+            sizeof(total_before),
+            sizeof(total_after),
+            sizeof(total_before - total_after)
+        )
     )
-    style = style.strip().replace('\n','')
+    style = style.strip().replace('\n', '')
     return template % (style, ('\n'.join(lis)))
 
 
@@ -254,6 +281,8 @@ def mkdir(newdir):
 
 _link_regex = re.compile('<link .*?>')
 _href_regex = re.compile('href=[\'"]([^\'"]+)[\'"]')
+
+
 def _find_link(line, href):
     for each in _link_regex.findall(line):
         for each_href in _href_regex.findall(each):
