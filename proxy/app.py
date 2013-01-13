@@ -6,6 +6,7 @@ import hashlib
 import re
 import urllib
 import urlparse
+import shutil
 
 from lxml import etree
 from lxml.cssselect import CSSSelector
@@ -292,3 +293,7 @@ def _find_link(line, href):
 
 if __name__ == "__main__":
     app.run(debug=True)
+    try:
+        shutil.rmtree(CACHE_DIR)
+    except Exception:
+        pass
