@@ -18,6 +18,15 @@ API
 
     Once all URLs have been processed the CSS is analyzed.
 
+  * ``process_url(url)``
+    Given a specific URL it will download it and parse the HTML. This
+    method will download the HTML then called ``process_html()``.
+
+  * ``process_html(html, url)``
+    If you for some reason already have the HTML you can jump straight
+    to this method. Note, you still need to provide the URL where you
+    got the HTML from so it can use that to download any external CSS.
+
   The ``Processor`` instance will make two attributes available
 
   * ``instance.inlines``

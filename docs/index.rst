@@ -26,6 +26,7 @@ is `available on Github <https://github.com/peterbe/mincss>`_.
    gettingstarted
    features
    api
+   changelog
 
 
 Indices and tables

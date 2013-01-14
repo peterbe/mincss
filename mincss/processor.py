@@ -7,7 +7,7 @@ from lxml import etree
 from lxml.cssselect import CSSSelector, SelectorSyntaxError, ExpressionError
 import urllib
 
-#RE_HAS_MEDIA = re.compile("@media")
+
 RE_FIND_MEDIA = re.compile("(@media.+?)(\{)", re.DOTALL | re.MULTILINE)
 RE_NESTS = re.compile('@(-|keyframes).*?({)', re.DOTALL | re.M)
 
@@ -18,7 +18,12 @@ EXCEPTIONAL_SELECTORS = (
 
 
 class ParserError(Exception):
-    """happens we fail to parse the HTML"""
+    """happens when we fail to parse the HTML"""
+    pass
+
+
+class DownloadError(Exception):
+    """happens when we fail to down the URL"""
     pass
 
 
@@ -45,10 +50,10 @@ class Processor(object):
         try:
             response = urllib.urlopen(url)
             if response.getcode() is not None:
-                assert (
-                    response.getcode() == 200,
-                    '%s -- %s ' % (url, response.getcode())
-                )
+                if response.getcode() != 200:
+                    raise DownloadError(
+                        '%s -- %s ' % (url, response.getcode())
+                    )
             html = response.read()
             return unicode(html, 'utf-8')
         except IOError:
@@ -56,7 +61,7 @@ class Processor(object):
 
     def process(self, *urls):
         for url in urls:
-            self._process_url(url)
+            self.process_url(url)
 
         for identifier in sorted(self.blocks.keys()):
             content = self.blocks[identifier]
@@ -78,28 +83,20 @@ class Processor(object):
                 self.links.append(
                     LinkResult(
                         href,
-                        url,
+                        #url,
                         content,
                         processed
                     )
                 )
 
-    def _process_url(self, url):
+    def process_url(self, url):
         html = self._download(url)
-        parser = etree.HTMLParser()
-        stripped = html.strip()
-        tree = etree.fromstring(stripped, parser).getroottree()
-        page = tree.getroot()
+        self.process_html(html.strip(), url=url)
 
-        #print repr(stripped[:100])
-        # lxml inserts a doctype if none exists, so only include it in
-        # the root if it was in the original html.
-        #print repr(tree.docinfo.doctype)
-        #if stripped.startswith(tree.docinfo.doctype):
-        #    root = tree
-        #else:
-        #    root = page
-        #root = tree if stripped.startswith(tree.docinfo.doctype) else page
+    def process_html(self, html, url):
+        parser = etree.HTMLParser()
+        tree = etree.fromstring(html, parser).getroottree()
+        page = tree.getroot()
 
         if page is None:
             print repr(html)
@@ -135,7 +132,6 @@ class Processor(object):
         def commentmatcher(match):
             whole = match.group()
             # are we in a block or outside
-            #p = content.find(match.group())
             nearest_close = content[:match.start()].rfind('}')
             nearest_open = content[:match.start()].rfind('{')
             next_close = content[match.end():].find('}')
@@ -355,7 +351,7 @@ class InlineResult(_Result):
 
 class LinkResult(_Result):
 
-    def __init__(self, href, url, *args):
+    def __init__(self, href, *args):
         self.href = href
-        self.url = url
+        #self.url = url
         super(LinkResult, self).__init__(*args)
