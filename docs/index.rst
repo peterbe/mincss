@@ -3,7 +3,7 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-mincss - clears the junk out of your CSS
+mincss - Clears the junk out of your CSS
 ========================================
 
 ``mincss`` is a Python library that makes it possible to evaluate
