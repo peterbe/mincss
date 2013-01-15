@@ -54,8 +54,8 @@ class Processor(object):
                     raise DownloadError(
                         '%s -- %s ' % (url, response.getcode())
                     )
-            html = response.read()
-            return unicode(html, 'utf-8')
+            content = response.read()
+            return unicode(content, 'utf-8')
         except IOError:
             raise IOError(url)
 
@@ -116,7 +116,7 @@ class Processor(object):
         for link in CSSSelector('link')(page):
             if (
                 link.attrib.get('rel', '') == 'stylesheet' or
-                link.attrib['href'].lower().endswith('.css')
+                link.attrib['href'].lower().split('?')[0].endswith('.css')
             ):
                 link_url = self._make_absolute_url(url, link.attrib['href'])
                 key = (link_url, link.attrib['href'])

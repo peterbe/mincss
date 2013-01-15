@@ -1,7 +1,9 @@
 #!/usr/bin/env python
+import codecs
 import datetime
 import os
 import functools
+import logging
 import hashlib
 import re
 import urllib
@@ -14,12 +16,10 @@ from lxml.cssselect import CSSSelector
 from flask import Flask, abort, make_response, request
 app = Flask(__name__)
 
-try:
-    from mincss.processor import Processor
-except ImportError:
-    import sys
-    sys.path.insert(0, os.path.normpath('../'))
-    from mincss.processor import Processor
+import sys
+# do this to help development
+sys.path.insert(0, os.path.normpath('../'))
+from mincss.processor import Processor
 
 
 CACHE_DIR = os.path.join(
@@ -47,11 +47,19 @@ def proxy(path):
     if path == 'favicon.ico':
         abort(404)
     url = path
-    if not path.startswith('http://'):
+    if not path.count('://'):
         url = 'http://' + url
+
+    query = urlparse.urlparse(request.url).query
+    if query:
+        url += '?%s' % query
+    logging.info('Downloading %s' % url)
     html = download(url)
+
     p = Processor(debug=False)
-    p.process(url)
+    # since we've already download the HTML
+    p.process_html(html, url)
+    p.process()
 
     collect_stats = request.args.get('MINCSS_STATS', False)
     stats = []
@@ -73,6 +81,7 @@ def proxy(path):
             return bail
 
         if not filename.startswith('/'):
+
             filename = os.path.normpath(
                 os.path.join(
                     os.path.dirname(href),
@@ -86,7 +95,10 @@ def proxy(path):
     for i, each in enumerate(p.inlines):
         # this should be using CSSSelector instead
         new_inline = each.after
-        new_inline = css_url_regex.sub(css_url_replacer, new_inline)
+        new_inline = css_url_regex.sub(
+            functools.partial(css_url_replacer, href=url),
+            new_inline
+        )
         stats.append(
             ('inline %s' % (i + 1), each.before, each.after)
         )
@@ -103,11 +115,12 @@ def proxy(path):
     #root = tree if stripped.startswith(tree.docinfo.doctype) else page
 
     links = dict((x.href, x) for x in p.links)
+
     #all_lines = html.splitlines()
     for link in CSSSelector('link')(page):
         if (
             link.attrib.get('rel', '') == 'stylesheet' or
-            link.attrib['href'].lower().endswith('.css')
+            link.attrib['href'].lower().split('?')[0].endswith('.css')
         ):
             hash_ = hashlib.md5(url + link.attrib['href']).hexdigest()[:7]
             now = datetime.date.today()
@@ -118,7 +131,6 @@ def proxy(path):
                 str(now.day),
             )
             mkdir(destination_dir)
-
             new_css = links[link.attrib['href']].after
             stats.append((
                 link.attrib['href'],
@@ -133,7 +145,8 @@ def proxy(path):
                 new_css
             )
             destination = os.path.join(destination_dir, hash_ + '.css')
-            with open(destination, 'w') as f:
+
+            with codecs.open(destination, 'w', 'utf-8') as f:
                 f.write(new_css)
 
             link.attrib['href'] = (

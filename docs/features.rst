@@ -38,3 +38,9 @@ Supported Features and Limitations
 
 * Broken HTML or broken/invalid CSS isn't support and good results can
   not be guaranteed.
+
+
+**Things that don't work:**
+
+* link tags wrapped in IE-only style comments (e.g ``<!--[if lte IE
+  7]>``) is not supported.
