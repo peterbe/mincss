@@ -24,7 +24,7 @@ you're not using.
 Whitespace compression?
 -----------------------
 
-No, that's a separate concern. This tool works indendent of
+No, that's a separate concern. This tool works independent of
 whitespace compression/optimization.
 
 For example, if you have a build step or a runtime step that converts
