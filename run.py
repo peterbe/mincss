@@ -32,8 +32,6 @@ if __name__ == '__main__':
         os.mkdir(output_dir)
     for link in p.links:
         print "FOR", link.href
-        if link.href != link.url:
-            print "url: ", link.url
         #print "BEFORE ".ljust(79, '-')
         #print link.before
         #print "AFTER ".ljust(79, '-')
