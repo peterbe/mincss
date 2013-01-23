@@ -18,6 +18,7 @@ Suppose you have a page like this::
    <body>
      <div id="content">
        <p class="foo">Foo!</p>
+     </div>
    </body>
  </html>
 
