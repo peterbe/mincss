@@ -1,8 +1,10 @@
+import os
 import sys
 import collections
+import functools
 import random
 import re
-from urlparse import urlparse
+import urlparse
 from lxml import etree
 from lxml.cssselect import CSSSelector, SelectorSyntaxError, ExpressionError
 import urllib
@@ -36,12 +38,11 @@ def _get_random_string():
 
 class Processor(object):
 
-    def __init__(self, debug=False):
+    def __init__(self, debug=False, preserve_remote_urls=True):
         self.debug = debug
+        self.preserve_remote_urls = preserve_remote_urls
         self.tab = ' ' * 4
         self.blocks = {}
-        #self.keep = collections.defaultdict(list)
-        #self.blocks_bytes = {}
         self.inlines = []
         self.links = []
         self._bodies = []
@@ -121,6 +122,52 @@ class Processor(object):
                 link_url = self._make_absolute_url(url, link.attrib['href'])
                 key = (link_url, link.attrib['href'])
                 self.blocks[key] = self._download(link_url)
+                if self.preserve_remote_urls:
+                    self.blocks[key] = self._rewrite_urls(self.blocks[key], link_url)
+
+    def _rewrite_urls(self, content, link_url):
+        """Suppose you run mincss on www.example.org and it references:
+
+            <link href="http://cdn.example.org">
+
+        and in the CSS it references an image as:
+
+            background: url(/foo.png)
+
+        Then rewrite this to become:
+
+            background: url(http://cdn.example.org/foo.png)
+        """
+        css_url_regex = re.compile('url\(([^\)]+)\)')
+
+        def css_url_replacer(match, href=None):
+            filename = match.groups()[0]
+            bail = match.group()
+            if (
+                (filename.startswith('"') and filename.endswith('"')) or
+                (filename.startswith("'") and filename.endswith("'"))
+            ):
+                filename = filename[1:-1]
+            if 'data:image' in filename or '://' in filename:
+                return bail
+            if filename == '.':
+                # this is a known IE hack in CSS
+                return bail
+
+            #if not filename.startswith('/'):
+            #    joined = os.path.join(
+            #        os.path.dirname(href),
+            #        filename
+            #    )
+
+            new_filename = urlparse.urljoin(href, filename)
+            return 'url("%s")' % new_filename
+
+        content = css_url_regex.sub(
+            functools.partial(css_url_replacer, href=link_url),
+            content
+        )
+        return content
 
     def _process_content(self, content, bodies):
         # Find all of the unique media queries
@@ -167,6 +214,7 @@ class Processor(object):
                 (temp_key, whole)
             )
             return temp_key
+
         content = _css_comments.sub(commentmatcher, content)
         if no_mincss_blocks:
             no_mincss_regex = re.compile(
@@ -239,7 +287,6 @@ class Processor(object):
                 elif s in _already_tried:
                     found = False
                 else:
-
                     found = self._found(bodies, s)
 
                 if found:
@@ -321,7 +368,7 @@ class Processor(object):
         return False
 
     def _make_absolute_url(self, url, href):
-        parsed = urlparse(url)
+        parsed = urlparse.urlparse(url)
         if href.startswith('//'):
             return parsed.scheme + ':' + href
         if href.startswith('/'):

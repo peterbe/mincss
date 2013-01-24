@@ -7,8 +7,19 @@ API
 
 **This is work in progress and is likely to change in future version**
 
-* ``process.Processor([debug=False])``
+* ``process.Processor([debug=False, preserve_remote_urls=True])``
   Creates a processor instance that you can feed HTML and URLs.
+
+  The arguments:
+
+    * ``debug=False``
+      Currently does nothing particular.
+
+    * ``preserve_remote_urls=True``
+      If you run a URL like ``http://www.example.org`` that references
+      ``http://cdn.cloudware.com/foo.css`` which contains
+      ``url(/background.png)`` then the CSS will be rewritten to become
+      ``url(http://cdn.cloudware.com/background.png)``
 
   Instances of this allows you to use the following methods:
 

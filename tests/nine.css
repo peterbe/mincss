@@ -1,0 +1,12 @@
+.north {
+    background-image: url('http://www.google.com/north.png');
+}
+.south {
+    background-image: url("deeper/south.png");
+}
+.east {
+    background-image: url("/east.png");
+}
+.west {
+    background-image: url("../tests/west.png");
+}

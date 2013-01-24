@@ -78,7 +78,7 @@ class TestMinCSS(unittest.TestCase):
     def test_pseudo_selectors_hell(self):
         html = os.path.join(HERE, 'three.html')
         url = 'file://' + html
-        p = Processor()
+        p = Processor(preserve_remote_urls=False)
         p.process(url)
         # two.html only has 1 link CSS ref
         link = p.links[0]
@@ -176,3 +176,18 @@ class TestMinCSS(unittest.TestCase):
         after = p.inlines[0].after
         ok_(isinstance(after, unicode))
         ok_(u'Varf\xf6r st\xe5r det h\xe4r?' in after)
+
+    def test_preserve_remote_urls(self):
+        html = os.path.join(HERE, 'nine.html')
+        url = 'file://' + html
+        p = Processor(preserve_remote_urls=True)
+        p.process(url)
+
+        after = p.links[0].after
+        ok_("url('http://www.google.com/north.png')" in after)
+        url = 'file://' + HERE + '/deeper/south.png'
+        ok_('url("%s")' % url in after)
+        # since local file URLs don't have a domain, this is actually expected
+        ok_('url("file:///east.png")' in after)
+        url = 'file://' + HERE + '/west.png'
+        ok_('url("%s")' % url in after)

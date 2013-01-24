@@ -80,14 +80,13 @@ def proxy(path):
             # this is a known IE hack in CSS
             return bail
 
-        if not filename.startswith('/'):
-
-            filename = os.path.normpath(
-                os.path.join(
-                    os.path.dirname(href),
-                    filename
-                )
-            )
+        #if not filename.startswith('/'):
+        #    filename = os.path.normpath(
+        #        os.path.join(
+        #            os.path.dirname(href),
+        #            filename
+        #        )
+        #    )
 
         new_filename = urlparse.urljoin(url, filename)
         return 'url("%s")' % new_filename
