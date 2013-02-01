@@ -38,3 +38,11 @@ Now, let's use ``mincss`` as follows::
 
 As you can see, it automatically discovered that the ``input:hover``
 and the ``.bar`` selectors are not used in the HTML DOM tree.
+
+If you have ``phantomjs`` installed and can do things like
+``$ phantomjs --help`` on your command line you can run mincss like
+this::
+
+ >>> from mincss.processor import Processor
+ >>> p = Processor(phantomjs=True)
+ >>> p.process('http://localhost/page-with-javascript.html')

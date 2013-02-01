@@ -11,11 +11,9 @@ which CSS is actually being used. It does this by download the whole
 page(s) and finds all inline and linked CSS and analyses which
 selectors are still in use somewhere.
 
-It currently does the analysis entirely statically and does not
-support Javascript.
-
-``mincss`` is currently under development and the API is possibly
-changing.
+Optionally, you can use `PhantomJS <http://phantomjs.org/>`_ to
+download the HTML source from a URL which means it will at least load
+all the Javascript that gets executed onload.
 
 Installation should be as simple as ``pip install mincss``. The code
 is `available on Github <https://github.com/peterbe/mincss>`_.

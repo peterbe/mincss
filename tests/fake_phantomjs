@@ -1,0 +1,11 @@
+#!/usr/bin/env python
+import urllib
+
+def run(url):
+    print urllib.urlopen(url).read()
+    return 0
+
+if __name__ == '__main__':
+    import sys
+    url = sys.argv[-1]
+    sys.exit(run(url))

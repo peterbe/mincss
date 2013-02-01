@@ -4,3 +4,4 @@ docs/_build/
 mincss.egg-info/
 /build/
 /dist/
+simple.js

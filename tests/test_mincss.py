@@ -1,10 +1,16 @@
 import os
 import unittest
 from nose.tools import eq_, ok_
+
+# make sure it's running the mincss here and not anything installed
+import sys
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from mincss.processor import Processor
 
 
 HERE = os.path.dirname(__file__)
+
+PHANTOMJS = os.path.join(HERE, 'fake_phantomjs')
 
 
 class TestMinCSS(unittest.TestCase):
@@ -191,3 +197,27 @@ class TestMinCSS(unittest.TestCase):
         ok_('url("file:///east.png")' in after)
         url = 'file://' + HERE + '/west.png'
         ok_('url("%s")' % url in after)
+
+    def test_download_with_phantomjs(self):
+        html = os.path.join(HERE, 'one.html')
+        url = 'file://' + html
+        p = Processor(
+            phantomjs=PHANTOMJS,
+            phantomjs_options={'cookies-file': 'bla'}
+        )
+        p.process(url)
+        # on line 7 there inline css starts
+        # one.html only has 1 block on inline CSS
+        inline = p.inlines[0]
+        lines_after = inline.after.strip().splitlines()
+        eq_(inline.line, 7)
+        ok_(len(inline.after) < len(inline.before))
+
+        # compare line by line
+        expect = '''
+            h1, h2, h3 { text-align: center; }
+            h3 { font-family: serif; }
+            h2 { color:red }
+        '''
+        for i, line in enumerate(expect.strip().splitlines()):
+            eq_(line.strip(), lines_after[i].strip())

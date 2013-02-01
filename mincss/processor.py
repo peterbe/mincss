@@ -5,6 +5,8 @@ import functools
 import random
 import re
 import urlparse
+import time
+import subprocess
 from lxml import etree
 from lxml.cssselect import CSSSelector, SelectorSyntaxError, ExpressionError
 import urllib
@@ -16,6 +18,12 @@ RE_NESTS = re.compile('@(-|keyframes).*?({)', re.DOTALL | re.M)
 
 EXCEPTIONAL_SELECTORS = (
     'html',
+)
+
+
+DOWNLOAD_JS = os.path.join(
+    os.path.dirname(__file__),
+    'download.js'
 )
 
 
@@ -38,7 +46,11 @@ def _get_random_string():
 
 class Processor(object):
 
-    def __init__(self, debug=False, preserve_remote_urls=True):
+    def __init__(self,
+                 debug=False,
+                 preserve_remote_urls=True,
+                 phantomjs=False,
+                 phantomjs_options=None):
         self.debug = debug
         self.preserve_remote_urls = preserve_remote_urls
         self.tab = ' ' * 4
@@ -46,6 +58,8 @@ class Processor(object):
         self.inlines = []
         self.links = []
         self._bodies = []
+        self.phantomjs = phantomjs
+        self.phantomjs_options = phantomjs_options
 
     def _download(self, url):
         try:
@@ -59,6 +73,40 @@ class Processor(object):
             return unicode(content, 'utf-8')
         except IOError:
             raise IOError(url)
+
+    def _download_with_phantomjs(self, url):
+        if self.phantomjs is True:
+            # otherwise, assume it's a path
+            self.phantomjs = 'phantomjs'
+        elif not os.path.isfile(self.phantomjs):
+            raise IOError('%s is not a path to phantomjs' % self.phantomjs)
+
+        command = [self.phantomjs]
+        if self.phantomjs_options:
+            if 'load-images' not in self.phantomjs_options:
+                # not entirely sure if this helps but there can't be any point
+                # at all to download image for mincss
+                self.phantomjs_options['load-images'] = 'no'
+            for key, value in self.phantomjs_options.items():
+                command.append('--%s=%s' % (key, value))
+
+        command.append(DOWNLOAD_JS)
+        assert ' ' not in url
+        command.append(url)
+
+        t0 = time.time()
+        process = subprocess.Popen(
+            ' '.join(command),
+            shell=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        )
+        out, err = process.communicate()
+        t1 = time.time()
+        if self.debug:
+            print "Took", t1 - t0, "seconds to download with PhantomJS"
+
+        return unicode(out, 'utf-8')
 
     def process(self, *urls):
         for url in urls:
@@ -91,7 +139,10 @@ class Processor(object):
                 )
 
     def process_url(self, url):
-        html = self._download(url)
+        if self.phantomjs:
+            html = self._download_with_phantomjs(url)
+        else:
+            html = self._download(url)
         self.process_html(html.strip(), url=url)
 
     def process_html(self, html, url):

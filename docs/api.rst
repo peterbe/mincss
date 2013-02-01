@@ -21,6 +21,15 @@ API
       ``url(/background.png)`` then the CSS will be rewritten to become
       ``url(http://cdn.cloudware.com/background.png)``
 
+    * ``phantomjs=None``
+      If ``True`` will default to ``phantomjs``, If a string it's
+      assume it's the path to the executable ``phantomjs`` path.
+
+    * ``phantomjs_options={}``
+      Additional options/switches to the ``phantomjs`` command. This
+      has to be a dict. So, for example ``{'script-encoding': 'latin1'}``
+      becomes ``--script-encoding=latin1``.
+
   Instances of this allows you to use the following methods:
 
   * ``process(*urls)``
