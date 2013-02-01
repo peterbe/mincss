@@ -44,10 +44,12 @@ Or the <a href="https://github.com/peterbe/mincss/blob/master/README.md">README<
 
 <h3>What about AJAXy stuff?</h3>
 
-<p>Most likely, there's little <code>mincss</code> can do for you there. Sorry. <code>mincss</code>
-is primarily aimed at &quot;static&quot; sites.</p>
+<p>By default, the downloading of the HTML from the URL is done statically without Javascript
+support. If you have <a href="http://phantomjs.org/">PhantomJS</a> installed, you can use that instead
+it will attempt to run the Javascript that is loaded on the page.
 
-<p>If you only have a little Javascript creating DOM elements, you can still use <code>mincss</code>.
+<p>If your page only has a little Javascript creating DOM elements and you don't have PhantomJS installed,
+you can still use <code>mincss</code>.
 <a href="https://github.com/peterbe/mincss/tree/master/example">See this example</a>.</p>
 
 <h3>Authors and Contributors</h3>
