@@ -1,7 +1,7 @@
 mincss
 ======
 
-Clears the junk out of your CSS but finding out which selectors are
+Clears the junk out of your CSS by finding out which selectors are
 actually not used in your HTML.
 
 By Peter Bengtsson, 2012-2013
