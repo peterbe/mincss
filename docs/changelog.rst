@@ -5,6 +5,11 @@
 Changelog
 =========
 
+v0.6.1 (2013-02-12)
+-------------------
+
+The proxy app would turn `<script src="foo"></script>` into `<script
+src="http://remote/foo"/>`. Same for iframe, textarea and divs.
 
 v0.6.0 (2013-02-01)
 -------------------
