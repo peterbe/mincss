@@ -28,6 +28,12 @@ CACHE_DIR = os.path.join(
 )
 
 
+CLOSING_REGEX = re.compile(
+    '(<(script|iframe|textarea|div)\s*[^>]+/>)',
+    flags=re.M|re.DOTALL
+)
+
+
 @app.route("/cache/<path:path>")
 def cache(path):
     source = os.path.join(CACHE_DIR, path)
@@ -183,6 +189,13 @@ def proxy(path):
             )
 
     html = etree.tostring(page)
+    # the etree.tostring() method will turn `<script src="foo"></script>'
+    # to `<script src="foo"/>`. Fix that.
+    for each, tag in CLOSING_REGEX.findall(html):
+        html = html.replace(
+            each,
+            each.replace('/>', '></%s>' % tag)
+        )
     if collect_stats:
         html = re.sub(
             '<body[^>]*>',
