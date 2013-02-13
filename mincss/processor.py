@@ -170,7 +170,7 @@ class Processor(object):
                 link.attrib.get('rel', '') == 'stylesheet' or
                 link.attrib['href'].lower().split('?')[0].endswith('.css')
             ):
-                link_url = self._make_absolute_url(url, link.attrib['href'])
+                link_url = self.make_absolute_url(url, link.attrib['href'])
                 key = (link_url, link.attrib['href'])
                 self.blocks[key] = self._download(link_url)
                 if self.preserve_remote_urls:
@@ -418,19 +418,9 @@ class Processor(object):
                 print >>sys.stderr, repr(selector)
         return False
 
-    def _make_absolute_url(self, url, href):
-        parsed = urlparse.urlparse(url)
-        if href.startswith('//'):
-            return parsed.scheme + ':' + href
-        if href.startswith('/'):
-            return parsed.scheme + '://' + parsed.netloc + href
-        if href.count('://'):
-            return href
-        path = parsed.path
-        parts = path.split('/')
-        parts[-1] = href
-        path = '/'.join(parts)
-        return parsed.scheme + '://' + parsed.netloc + path
+    @staticmethod
+    def make_absolute_url(url, href):
+        return urlparse.urljoin(url, href)
 
 
 class _Result(object):

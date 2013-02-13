@@ -5,6 +5,12 @@
 Changelog
 =========
 
+v0.7.0 (2013-02-13)
+-------------------
+
+Fixed bug with make absolute url of url like `http://peterbe.com` +
+`./style.css`. Thanks @erfaan!
+
 v0.6.1 (2013-02-12)
 -------------------
 

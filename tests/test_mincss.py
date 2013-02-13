@@ -221,3 +221,42 @@ class TestMinCSS(unittest.TestCase):
         '''
         for i, line in enumerate(expect.strip().splitlines()):
             eq_(line.strip(), lines_after[i].strip())
+
+    def test_make_absolute_url(self):
+        p = Processor()
+        eq_(
+            p.make_absolute_url('http://www.com/', './style.css'),
+            'http://www.com/style.css'
+        )
+        eq_(
+            p.make_absolute_url('http://www.com', './style.css'),
+            'http://www.com/style.css'
+        )
+        eq_(
+            p.make_absolute_url('http://www.com', '//cdn.com/style.css'),
+            'http://cdn.com/style.css'
+        )
+        eq_(
+            p.make_absolute_url('http://www.com/', '//cdn.com/style.css'),
+            'http://cdn.com/style.css'
+        )
+        eq_(
+            p.make_absolute_url('http://www.com/', '/style.css'),
+            'http://www.com/style.css'
+        )
+        eq_(
+            p.make_absolute_url('http://www.com/elsewhere', '/style.css'),
+            'http://www.com/style.css'
+        )
+        eq_(
+            p.make_absolute_url('http://www.com/elsewhere/', '/style.css'),
+            'http://www.com/style.css'
+        )
+        eq_(
+            p.make_absolute_url('http://www.com/elsewhere/', './style.css'),
+            'http://www.com/elsewhere/style.css'
+        )
+        eq_(
+            p.make_absolute_url('http://www.com/elsewhere', './style.css'),
+            'http://www.com/style.css'
+        )
