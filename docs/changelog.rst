@@ -5,6 +5,13 @@
 Changelog
 =========
 
+v0.8.0 (2013-02-26)
+-------------------
+
+Much faster! Unless you pass ``Processor(optimize_lookup=False)`` when
+creating the processor instance. See
+http://www.peterbe.com/plog/mincss-0.8
+
 v0.7.0 (2013-02-13)
 -------------------
 

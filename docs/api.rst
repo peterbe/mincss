@@ -30,6 +30,11 @@ API
       has to be a dict. So, for example ``{'script-encoding': 'latin1'}``
       becomes ``--script-encoding=latin1``.
 
+    * ``optimize_lookup=True``
+      If true, will make a set of all ids and class names in all
+      processed documents and use these to avoid some expensive CSS
+      query searches.
+
   Instances of this allows you to use the following methods:
 
   * ``process(*urls)``

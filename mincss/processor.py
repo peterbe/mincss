@@ -1,6 +1,5 @@
 import os
 import sys
-import collections
 import functools
 import random
 import re
@@ -14,6 +13,8 @@ import urllib
 
 RE_FIND_MEDIA = re.compile("(@media.+?)(\{)", re.DOTALL | re.MULTILINE)
 RE_NESTS = re.compile('@(-|keyframes).*?({)', re.DOTALL | re.M)
+RE_CLASS_DEF = re.compile('\.([\w-]+)')
+RE_ID_DEF = re.compile('#([\w-]+)')
 
 
 EXCEPTIONAL_SELECTORS = (
@@ -50,7 +51,8 @@ class Processor(object):
                  debug=False,
                  preserve_remote_urls=True,
                  phantomjs=False,
-                 phantomjs_options=None):
+                 phantomjs_options=None,
+                 optimize_lookup=True):
         self.debug = debug
         self.preserve_remote_urls = preserve_remote_urls
         self.tab = ' ' * 4
@@ -58,6 +60,9 @@ class Processor(object):
         self.inlines = []
         self.links = []
         self._bodies = []
+        self.optimize_lookup = optimize_lookup
+        self._all_ids = set()
+        self._all_classes = set()
         self.phantomjs = phantomjs
         self.phantomjs_options = phantomjs_options
 
@@ -157,6 +162,16 @@ class Processor(object):
         lines = html.splitlines()
         body, = CSSSelector('body')(page)
         self._bodies.append(body)
+        if self.optimize_lookup:
+            for each in body.iter():
+                id = each.attrib.get('id')
+                if id:
+                    self._all_ids.add(id)
+                classes = each.attrib.get('class')
+                if classes:
+                    for class_ in classes.split():
+                        self._all_classes.add(class_)
+
         for style in CSSSelector('style')(page):
             first_line = style.text.strip().splitlines()[0]
             for i, line in enumerate(lines):
@@ -174,7 +189,10 @@ class Processor(object):
                 key = (link_url, link.attrib['href'])
                 self.blocks[key] = self._download(link_url)
                 if self.preserve_remote_urls:
-                    self.blocks[key] = self._rewrite_urls(self.blocks[key], link_url)
+                    self.blocks[key] = self._rewrite_urls(
+                        self.blocks[key],
+                        link_url
+                    )
 
     def _rewrite_urls(self, content, link_url):
         """Suppose you run mincss on www.example.org and it references:
@@ -248,11 +266,6 @@ class Processor(object):
                 outside = nearest_close > nearest_open
             else:
                 raise Exception("can this happen?!")
-                print repr(match.group())
-                print "nearest", (nearest_close, nearest_open)
-                print nearest_close < nearest_open
-                #print "next", (next_close, next_open)
-                print
 
             if outside:
                 temp_key = '@%scomment{}' % _get_random_string()
@@ -394,12 +407,26 @@ class Processor(object):
         )
 
     def _found(self, bodies, selector):
+        if self._all_ids:
+            try:
+                id_ = RE_ID_DEF.findall(selector)[0]
+                if id_ not in self._all_ids:
+                    # don't bother then
+                    return False
+            except IndexError:
+                pass
+
+        if self._all_classes:
+            for class_ in RE_CLASS_DEF.findall(selector):
+                if class_ not in self._all_classes:
+                    # don't bother then
+                    return False
+
         #print "SELECTOR", repr(selector)
-        r = self.__found(bodies, selector)
-        #print "R", repr(r)
+        r = self._selector_query_found(bodies, selector)
         return r
 
-    def __found(self, bodies, selector):
+    def _selector_query_found(self, bodies, selector):
         selector = selector.split(':')[0]
 
         if '}' in selector:

@@ -9,6 +9,7 @@ import re
 import urllib
 import urlparse
 import shutil
+import time
 
 from lxml import etree
 from lxml.cssselect import CSSSelector
@@ -30,7 +31,7 @@ CACHE_DIR = os.path.join(
 
 CLOSING_REGEX = re.compile(
     '(<(script|iframe|textarea|div)\s*[^>]+/>)',
-    flags=re.M|re.DOTALL
+    flags=re.M | re.DOTALL
 )
 
 
@@ -60,12 +61,19 @@ def proxy(path):
     if query:
         url += '?%s' % query
     logging.info('Downloading %s' % url)
+    t0 = time.time()
     html = download(url)
+    t1 = time.time()
+    print "%.4f seconds to download" % (t1 - t0)
 
-    p = Processor(debug=False)
+    p = Processor(debug=False, optimize_lookup=True)
     # since we've already download the HTML
+    t0 = time.time()
     p.process_html(html, url)
+    t1 = time.time()
     p.process()
+    t2 = time.time()
+    print "%.4f seconds to parse and process" % (t2 - t1)
 
     collect_stats = request.args.get('MINCSS_STATS', False)
     stats = []

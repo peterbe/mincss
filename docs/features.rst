@@ -31,12 +31,12 @@ Supported Features and Limitations
 **Things that don't yet work:**
 
 * Javascript events that manipulate the DOM tree.
-  A future version might use a parser that supports Javascript but
-  likely it will never be perfect.
+  You can use PhantomJS to do the downloading but it still won't get
+  every possible piece of HTML generated based on complex Javascript.
 
 * keyframes are always left untouched even if it's never referenced
 
-* Broken HTML or broken/invalid CSS isn't support and good results can
+* Broken HTML or broken/invalid CSS isn't supported and good results can
   not be guaranteed.
 
 
