@@ -196,14 +196,7 @@ def proxy(path):
                 collect_stats
             )
 
-    html = etree.tostring(page)
-    # the etree.tostring() method will turn `<script src="foo"></script>'
-    # to `<script src="foo"/>`. Fix that.
-    for each, tag in CLOSING_REGEX.findall(html):
-        html = html.replace(
-            each,
-            each.replace('/>', '></%s>' % tag)
-        )
+    html = etree.tostring(page, method='html')
     if collect_stats:
         html = re.sub(
             '<body[^>]*>',
