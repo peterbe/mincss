@@ -5,6 +5,11 @@
 Changelog
 =========
 
+v0.8.1 (2013-04-05)
+-------------------
+
+The file ``download.js`` was missing from the tarball.
+
 v0.8.0 (2013-02-26)
 -------------------
 
