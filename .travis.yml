@@ -1,0 +1,12 @@
+language: python
+
+python:
+    - "2.7"
+    - "3.3"
+
+install:
+    - python setup.py --quiet install
+
+script:
+    - nosetests
+    - mincss https://travis-ci.org

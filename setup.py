@@ -1,4 +1,6 @@
-import codecs
+#!/usr/bin/env python
+
+import io
 import os
 import re
 
@@ -6,7 +8,7 @@ import re
 # Prevent spurious errors during `python setup.py test`, a la
 # http://www.eby-sarna.com/pipermail/peak/2010-May/003357.html:
 try:
-    import multiprocessing
+    pass
 except ImportError:
     pass
 
@@ -14,7 +16,8 @@ from setuptools import setup, find_packages
 
 
 def read(*parts):
-    return codecs.open(os.path.join(os.path.dirname(__file__), *parts)).read()
+    with io.open(os.path.join(os.path.dirname(__file__), *parts)) as f:
+        return f.read()
 
 
 def find_version(*file_paths):
@@ -23,7 +26,8 @@ def find_version(*file_paths):
                               version_file, re.M)
     if version_match:
         return version_match.group(1)
-    raise RuntimeError("Unable to find version string.")
+    raise RuntimeError('Unable to find version string.')
+
 
 def find_install_requires():
     return [x.strip() for x in
@@ -35,9 +39,7 @@ setup(
     name='mincss',
     version=find_version('mincss/__init__.py'),
     description='clears the junk out of your CSS',
-    long_description=read('README.md') + '\n\n' +
-                     '\n'.join(read('docs', 'changelog.rst')
-                                   .splitlines()[1:]),
+    long_description=read('README.rst'),
     author='Peter Bengtsson',
     author_email='mail@peterbe.com',
     license='BSD',
@@ -55,7 +57,8 @@ setup(
         'Programming Language :: Python :: 2.7',
     ],
     install_requires=find_install_requires(),
+    entry_points={'console_scripts': ['mincss=mincss.main:main']},
     tests_require=['nose'],
-    test_suite='tests',
+    test_suite='tests.test_mincss',
     url='http://github.com/peterbe/mincss'
 )

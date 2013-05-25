@@ -1,17 +1,32 @@
+from __future__ import print_function
+
+import contextlib
+import functools
 import os
 import sys
-import functools
 import random
 import re
-import urlparse
 import time
 import subprocess
+
 from lxml import etree
 from lxml.cssselect import CSSSelector, SelectorSyntaxError, ExpressionError
-import urllib
+
+try:
+    from urllib.parse import urljoin
+    from urllib.request import urlopen
+except ImportError:
+    from urlparse import urljoin
+    from urllib import urlopen
 
 
-RE_FIND_MEDIA = re.compile("(@media.+?)(\{)", re.DOTALL | re.MULTILINE)
+try:
+    unicode
+except NameError:
+    unicode = str
+
+
+RE_FIND_MEDIA = re.compile('(@media.+?)(\{)', re.DOTALL | re.MULTILINE)
 RE_NESTS = re.compile('@(-|keyframes).*?({)', re.DOTALL | re.M)
 RE_CLASS_DEF = re.compile('\.([\w-]+)')
 RE_ID_DEF = re.compile('#([\w-]+)')
@@ -29,13 +44,13 @@ DOWNLOAD_JS = os.path.join(
 
 
 class ParserError(Exception):
-    """happens when we fail to parse the HTML"""
-    pass
+
+    """happens when we fail to parse the HTML."""
 
 
 class DownloadError(Exception):
-    """happens when we fail to down the URL"""
-    pass
+
+    """happens when we fail to down the URL."""
 
 
 def _get_random_string():
@@ -55,7 +70,6 @@ class Processor(object):
                  optimize_lookup=True):
         self.debug = debug
         self.preserve_remote_urls = preserve_remote_urls
-        self.tab = ' ' * 4
         self.blocks = {}
         self.inlines = []
         self.links = []
@@ -68,14 +82,15 @@ class Processor(object):
 
     def _download(self, url):
         try:
-            response = urllib.urlopen(url)
-            if response.getcode() is not None:
-                if response.getcode() != 200:
-                    raise DownloadError(
-                        '%s -- %s ' % (url, response.getcode())
-                    )
-            content = response.read()
-            return unicode(content, 'utf-8')
+            with contextlib.closing(urlopen(url)) as response:
+                if response.getcode() is not None:
+                    if response.getcode() != 200:
+                        raise DownloadError(
+                            '%s -- %s ' % (url, response.getcode())
+                        )
+                content = response.read()
+                return unicode(content,
+                               get_charset(response))
         except IOError:
             raise IOError(url)
 
@@ -109,7 +124,7 @@ class Processor(object):
         out, err = process.communicate()
         t1 = time.time()
         if self.debug:
-            print "Took", t1 - t0, "seconds to download with PhantomJS"
+            print('Took', t1 - t0, 'seconds to download with PhantomJS')
 
         return unicode(out, 'utf-8')
 
@@ -123,7 +138,6 @@ class Processor(object):
 
             if isinstance(identifier[0], int):
                 line, url = identifier
-                # inline
                 self.inlines.append(
                     InlineResult(
                         line,
@@ -137,7 +151,6 @@ class Processor(object):
                 self.links.append(
                     LinkResult(
                         href,
-                        #url,
                         content,
                         processed
                     )
@@ -151,22 +164,22 @@ class Processor(object):
         self.process_html(html.strip(), url=url)
 
     def process_html(self, html, url):
-        parser = etree.HTMLParser()
-        tree = etree.fromstring(html, parser).getroottree()
+        parser = etree.HTMLParser(encoding='utf-8')
+        tree = etree.fromstring(html.encode('utf-8'), parser).getroottree()
         page = tree.getroot()
 
         if page is None:
-            print repr(html)
-            raise ParserError("Could not parse the html")
+            print(repr(html))
+            raise ParserError('Could not parse the html')
 
         lines = html.splitlines()
         body, = CSSSelector('body')(page)
         self._bodies.append(body)
         if self.optimize_lookup:
             for each in body.iter():
-                id = each.attrib.get('id')
-                if id:
-                    self._all_ids.add(id)
+                identifier = each.attrib.get('id')
+                if identifier:
+                    self._all_ids.add(identifier)
                 classes = each.attrib.get('class')
                 if classes:
                     for class_ in classes.split():
@@ -206,6 +219,7 @@ class Processor(object):
         Then rewrite this to become:
 
             background: url(http://cdn.example.org/foo.png)
+
         """
         css_url_regex = re.compile('url\(([^\)]+)\)')
 
@@ -223,13 +237,7 @@ class Processor(object):
                 # this is a known IE hack in CSS
                 return bail
 
-            #if not filename.startswith('/'):
-            #    joined = os.path.join(
-            #        os.path.dirname(href),
-            #        filename
-            #    )
-
-            new_filename = urlparse.urljoin(href, filename)
+            new_filename = urljoin(href, filename)
             return 'url("%s")' % new_filename
 
         content = css_url_regex.sub(
@@ -265,7 +273,7 @@ class Processor(object):
             elif nearest_close > -1 and nearest_open > -1:
                 outside = nearest_close > nearest_open
             else:
-                raise Exception("can this happen?!")
+                raise Exception('can this happen?!')
 
             if outside:
                 temp_key = '@%scomment{}' % _get_random_string()
@@ -289,7 +297,7 @@ class Processor(object):
 
         nests = [(m.group(1), m) for m in RE_NESTS.finditer(content)]
         _nests = []
-        for start, m in nests:
+        for _, m in nests:
             __, whole = self._get_contents(m, content)
             _nests.append(whole)
         # once all nests have been spotted, temporarily replace them
@@ -312,7 +320,6 @@ class Processor(object):
             else:
                 improved = ''
             temp_key = '@%s{}' % _get_random_string()
-            #content = content.replace(whole, temp_key)
             inner_improvements.append(
                 (temp_key, whole, improved)
             )
@@ -391,12 +398,12 @@ class Processor(object):
         # we are starting the character after the first opening brace
         open_braces = 1
         position = match.end()
-        content = ""
+        content = ''
         while open_braces > 0:
             c = original_content[position]
-            if c == "{":
+            if c == '{':
                 open_braces += 1
-            if c == "}":
+            if c == '}':
                 open_braces -= 1
             content += c
             position += 1
@@ -422,7 +429,6 @@ class Processor(object):
                     # don't bother then
                     return False
 
-        #print "SELECTOR", repr(selector)
         r = self._selector_query_found(bodies, selector)
         return r
 
@@ -435,22 +441,23 @@ class Processor(object):
 
         for body in bodies:
             try:
-                for each in CSSSelector(selector)(body):
+                for _ in CSSSelector(selector)(body):
                     return True
             except SelectorSyntaxError:
-                print >>sys.stderr, "TROUBLEMAKER"
-                print >>sys.stderr, repr(selector)
+                print('TROUBLEMAKER', file=sys.stderr)
+                print(repr(selector), file=sys.stderr)
             except ExpressionError:
-                print >>sys.stderr, "EXPRESSIONERROR"
-                print >>sys.stderr, repr(selector)
+                print('EXPRESSIONERROR', file=sys.stderr)
+                print(repr(selector), file=sys.stderr)
         return False
 
     @staticmethod
     def make_absolute_url(url, href):
-        return urlparse.urljoin(url, href)
+        return urljoin(url, href)
 
 
 class _Result(object):
+
     def __init__(self, before, after):
         self.before = before
         self.after = after
@@ -468,5 +475,19 @@ class LinkResult(_Result):
 
     def __init__(self, href, *args):
         self.href = href
-        #self.url = url
         super(LinkResult, self).__init__(*args)
+
+
+def get_charset(response, default='utf-8'):
+    """Return encoding."""
+    try:
+        # Python 3.
+        return response.info().get_param('charset', default)
+    except AttributeError:
+        # Python 2.
+        content_type = response.headers['content-type']
+        split_on = 'charset='
+        if split_on in content_type:
+            return content_type.split(split_on)[-1]
+        else:
+            return default

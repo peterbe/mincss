@@ -2,6 +2,7 @@
 import os
 import sys
 import time
+from __future__ import print_function
 
 # make sure it's running the mincss here and not anything installed
 sys.path.insert(0, os.path.dirname(__file__))
@@ -18,34 +19,34 @@ def run(args):
     t0 = time.time()
     p.process(args.url)
     t1 = time.time()
-    print "TOTAL TIME ", t1 - t0
+    print("TOTAL TIME ", t1 - t0)
     for inline in p.inlines:
-        print "ON", inline.url
-        print "AT line", inline.line
-        print "BEFORE ".ljust(79, '-')
-        print inline.before
-        print "AFTER ".ljust(79, '-')
-        print inline.after
-        print
+        print("ON", inline.url)
+        print("AT line", inline.line)
+        print("BEFORE ".ljust(79, '-'))
+        print(inline.before)
+        print("AFTER ".ljust(79, '-'))
+        print(inline.after)
+        print()
 
     output_dir = args.outputdir
     if not os.path.isdir(output_dir):
         os.mkdir(output_dir)
     for link in p.links:
-        print "FOR", link.href
-        #print "BEFORE ".ljust(79, '-')
-        #print link.before
-        #print "AFTER ".ljust(79, '-')
-        #print link.after
+        print("FOR", link.href)
+        #print("BEFORE ".ljust(79, '-'))
+        #print(link.before)
+        #print("AFTER ".ljust(79, '-'))
+        #print(link.after)
         orig_name = link.href.split('/')[-1]
         with open(os.path.join(output_dir, orig_name), 'w') as f:
             f.write(link.after)
         before_name = 'before_' + link.href.split('/')[-1]
         with open(os.path.join(output_dir, before_name), 'w') as f:
             f.write(link.before.encode('utf-8'))
-        print "Files written to", output_dir
-        print
-        print (
+        print("Files written to", output_dir
+        print()
+        print(
             '(from %d to %d saves %d)' %
             (len(link.before), len(link.after),
              len(link.before) - len(link.after))

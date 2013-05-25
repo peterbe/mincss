@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+
+from __future__ import print_function
 import codecs
 import datetime
 import os
@@ -6,10 +8,15 @@ import functools
 import logging
 import hashlib
 import re
-import urllib
-import urlparse
 import shutil
 import time
+
+try:
+    from urllib.parse import urljoin, urlparse
+    from urllib.request import urlopen
+except ImportError:
+    from urlparse import urljoin, urlparse
+    from urllib import urlopen
 
 from lxml import etree
 from lxml.cssselect import CSSSelector
@@ -21,6 +28,12 @@ import sys
 # do this to help development
 sys.path.insert(0, os.path.normpath('../'))
 from mincss.processor import Processor
+
+
+try:
+    unicode
+except NameError:
+    unicode = str
 
 
 CACHE_DIR = os.path.join(
@@ -35,21 +48,21 @@ CLOSING_REGEX = re.compile(
 )
 
 
-@app.route("/cache/<path:path>")
+@app.route('/cache/<path:path>')
 def cache(path):
     source = os.path.join(CACHE_DIR, path)
     with open(source) as f:
         response = make_response(f.read())
-        response.headers["Content-type"] = "text/css"
+        response.headers['Content-type'] = 'text/css'
         return response
 
 
 def download(url):
-    html = urllib.urlopen(url).read()
+    html = urlopen(url).read()
     return unicode(html, 'utf-8')
 
 
-@app.route("/<path:path>")
+@app.route('/<path:path>')
 def proxy(path):
     if path == 'favicon.ico':
         abort(404)
@@ -57,14 +70,14 @@ def proxy(path):
     if not path.count('://'):
         url = 'http://' + url
 
-    query = urlparse.urlparse(request.url).query
+    query = urlparse(request.url).query
     if query:
         url += '?%s' % query
     logging.info('Downloading %s' % url)
     t0 = time.time()
     html = download(url)
     t1 = time.time()
-    print "%.4f seconds to download" % (t1 - t0)
+    print('%.4f seconds to download' % (t1 - t0))
 
     p = Processor(debug=False, optimize_lookup=True)
     # since we've already download the HTML
@@ -73,7 +86,7 @@ def proxy(path):
     t1 = time.time()
     p.process()
     t2 = time.time()
-    print "%.4f seconds to parse and process" % (t2 - t1)
+    print('%.4f seconds to parse and process' % (t2 - t1))
 
     collect_stats = request.args.get('MINCSS_STATS', False)
     stats = []
@@ -94,15 +107,7 @@ def proxy(path):
             # this is a known IE hack in CSS
             return bail
 
-        #if not filename.startswith('/'):
-        #    filename = os.path.normpath(
-        #        os.path.join(
-        #            os.path.dirname(href),
-        #            filename
-        #        )
-        #    )
-
-        new_filename = urlparse.urljoin(url, filename)
+        new_filename = urljoin(url, filename)
         return 'url("%s")' % new_filename
 
     for i, each in enumerate(p.inlines):
@@ -125,11 +130,9 @@ def proxy(path):
     # lxml inserts a doctype if none exists, so only include it in
     # the root if it was in the original html.
     was_doctype = tree.docinfo.doctype
-    #root = tree if stripped.startswith(tree.docinfo.doctype) else page
 
     links = dict((x.href, x) for x in p.links)
 
-    #all_lines = html.splitlines()
     for link in CSSSelector('link')(page):
         if (
             link.attrib.get('rel', '') == 'stylesheet' or
@@ -168,7 +171,7 @@ def proxy(path):
 
     for img in CSSSelector('img, script')(page):
         if 'src' in img.attrib:
-            orig_src = urlparse.urljoin(url, img.attrib['src'])
+            orig_src = urljoin(url, img.attrib['src'])
             img.attrib['src'] = orig_src
 
     for a in CSSSelector('a')(page):
@@ -186,10 +189,9 @@ def proxy(path):
         if href.startswith('/'):
             a.attrib['href'] = (
                 '/' +
-                urlparse.urljoin(url, a.attrib['href'])
+                urljoin(url, a.attrib['href'])
                 .replace('http://', '')
             )
-        #else:
         if collect_stats:
             a.attrib['href'] = add_collect_stats_qs(
                 a.attrib['href'],
@@ -210,9 +212,10 @@ def proxy(path):
 
 
 def add_collect_stats_qs(url, value):
-    """
-    if :url is `page.html?foo=bar`
-    return `page.html?foo=bar&MINCSS_STATS=:value`
+    """if :url is `page.html?foo=bar` return.
+
+    `page.html?foo=bar&MINCSS_STATS=:value`
+
     """
     if '?' in url:
         url += '&'
@@ -283,21 +286,23 @@ def summorize_stats_html(stats):
 def sizeof(num):
     for x in ['bytes', 'KB', 'MB', 'GB']:
         if num < 1024.0 and num > -1024.0:
-            return "%3.1f%s" % (num, x)
+            return '%3.1f%s' % (num, x)
         num /= 1024.0
-    return "%3.1f%s" % (num, 'TB')
+    return '%3.1f%s' % (num, 'TB')
 
 
 def mkdir(newdir):
     """works the way a good mkdir should :)
+
         - already exists, silently complete
         - regular file in the way, raise an exception
         - parent directory(ies) does not exist, make them as well
+
     """
     if os.path.isdir(newdir):
         return
     if os.path.isfile(newdir):
-        raise OSError("a file with the same name as the desired "
+        raise OSError('a file with the same name as the desired '
                       "dir, '%s', already exists." % newdir)
     head, tail = os.path.split(newdir)
     if head and not os.path.isdir(head):
@@ -317,7 +322,7 @@ def _find_link(line, href):
                 return each
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     app.run(debug=True)
     try:
         shutil.rmtree(CACHE_DIR)
