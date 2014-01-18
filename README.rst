@@ -1,14 +1,14 @@
 mincss
 ======
 
-.. image:: https://travis-ci.org/myint/mincss.png?branch=master
-    :target: https://travis-ci.org/myint/mincss
+.. image:: https://travis-ci.org/peterbe/mincss.png?branch=master
+    :target: https://travis-ci.org/peterbe/mincss
     :alt: Build status
 
 Clears the junk out of your CSS by finding out which selectors are
 actually not used in your HTML.
 
-By Peter Bengtsson, 2012-2013
+By Peter Bengtsson, 2012-2014
 
 Example
 -------
@@ -23,7 +23,7 @@ Installation
 
 From pip::
 
-    $ pip install --upgrade git+https://github.com/myint/mincss
+    $ pip install --upgrade git+https://github.com/peterbe/mincss
 
 Why?
 ----

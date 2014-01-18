@@ -132,7 +132,7 @@ class Processor(object):
         for url in urls:
             self.process_url(url)
 
-        for identifier in sorted(self.blocks.keys()):
+        for identifier in sorted(self.blocks.keys(), key=lambda x: str(x[0])):
             content = self.blocks[identifier]
             processed = self._process_content(content, self._bodies)
 
