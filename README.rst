@@ -10,6 +10,8 @@ actually not used in your HTML.
 
 By Peter Bengtsson, 2012-2014
 
+Tested in Python 2.7, 3.3 and 3.4
+
 Example
 -------
 
