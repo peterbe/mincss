@@ -25,7 +25,7 @@ Installation
 
 From pip::
 
-    $ pip install --upgrade git+https://github.com/peterbe/mincss
+    $ pip install mincss
 
 Why?
 ----
