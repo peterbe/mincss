@@ -8,7 +8,8 @@ import re
 # Prevent spurious errors during `python setup.py test`, a la
 # http://www.eby-sarna.com/pipermail/peak/2010-May/003357.html:
 try:
-    pass
+    import multiprocessing
+    multiprocessing = multiprocessing  # shut up pyflakes
 except ImportError:
     pass
 
@@ -58,8 +59,9 @@ setup(
         'Programming Language :: Python :: 3',
     ],
     install_requires=find_install_requires(),
+    py_modules=['mincss'],
     entry_points={'console_scripts': ['mincss=mincss.main:main']},
     tests_require=['nose'],
     test_suite='tests.test_mincss',
-    url='http://github.com/peterbe/mincss'
+    url='https://github.com/peterbe/mincss'
 )
