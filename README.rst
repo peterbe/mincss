@@ -67,7 +67,7 @@ this for example:
 
     .logged-in-info {
         /* no mincss */
-    color: pink;
+        color: pink;
     }
 
 That tells ``mincss`` to ignore the whole block and all its selectors.
