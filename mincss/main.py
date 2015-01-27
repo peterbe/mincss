@@ -15,7 +15,8 @@ def run(args):
         options['phantomjs'] = True
     p = Processor(**options)
     t0 = time.time()
-    p.process(args.url)
+    # args.url is actually a list
+    p.process(*args.url)
     t1 = time.time()
     print('TOTAL TIME ', t1 - t0)
     for inline in p.inlines:
@@ -46,15 +47,13 @@ def run(args):
              len(link.before) - len(link.after))
         )
 
-    return 0
-
 
 def main():
     import argparse
     parser = argparse.ArgumentParser()
     add = parser.add_argument
     add('url', type=str,
-        help='URL to process')
+        help='URL(s) to process', nargs="*")
     add('--outputdir', action='store',
         default='./output',
         help='directory where to put output (default ./output)')
@@ -67,4 +66,4 @@ def main():
         help='Where is the phantomjs executable')
 
     args = parser.parse_args()
-    return run(args)
+    return run(args) or 0
