@@ -8,7 +8,7 @@ mincss
 Clears the junk out of your CSS by finding out which selectors are
 actually not used in your HTML.
 
-By Peter Bengtsson, 2012-2014
+By Peter Bengtsson, 2012-2015
 
 Tested in Python 2.7, 3.3 and 3.4
 
