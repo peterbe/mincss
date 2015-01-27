@@ -23,17 +23,22 @@ def read(*parts):
 
 def find_version(*file_paths):
     version_file = read(*file_paths)
-    version_match = re.search(r"^__version__ = ['\"]([^'\"]*)['\"]",
-                              version_file, re.M)
+    version_match = re.search(
+        r"^__version__ = ['\"]([^'\"]*)['\"]",
+        version_file,
+        re.M
+    )
     if version_match:
         return version_match.group(1)
     raise RuntimeError('Unable to find version string.')
 
 
 def find_install_requires():
-    return [x.strip() for x in
-            read('requirements.txt').splitlines()
-            if x.strip() and not x.startswith('#')]
+    return [
+        x.strip() for x in
+        read('requirements.txt').splitlines()
+        if x.strip() and not x.startswith('#')
+    ]
 
 
 setup(
@@ -54,9 +59,9 @@ setup(
         'Operating System :: OS Independent',
         'Programming Language :: Python',
         'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.6',
         'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.3',
+        'Programming Language :: Python :: 3.4',
     ],
     install_requires=find_install_requires(),
     py_modules=['mincss'],
