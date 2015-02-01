@@ -79,8 +79,11 @@ class Processor(object):
         self._all_classes = set()
         self.phantomjs = phantomjs
         self.phantomjs_options = phantomjs_options
+        self._downloaded = {}
 
     def _download(self, url):
+        if url in self._downloaded:
+            return self._downloaded[url]
         try:
             with contextlib.closing(urlopen(url)) as response:
                 if response.getcode() is not None:
@@ -89,8 +92,9 @@ class Processor(object):
                             '%s -- %s ' % (url, response.getcode())
                         )
                 content = response.read()
-                return unicode(content,
-                               get_charset(response))
+                content = unicode(content, get_charset(response))
+                self._downloaded[url] = content
+                return content
         except IOError:
             raise IOError(url)
 
