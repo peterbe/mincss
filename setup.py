@@ -64,7 +64,6 @@ setup(
         'Programming Language :: Python :: 3.4',
     ],
     install_requires=find_install_requires(),
-    py_modules=['mincss'],
     entry_points={'console_scripts': ['mincss=mincss.main:main']},
     tests_require=['nose'],
     test_suite='tests.test_mincss',
