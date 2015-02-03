@@ -42,6 +42,13 @@ class TestMinCSS(unittest.TestCase):
         for i, line in enumerate(expect.strip().splitlines()):
             eq_(line.strip(), lines_after[i].strip())
 
+    def test_html_with_empty_style_tag(self):
+        html = os.path.join(HERE, 'one-2.html')
+        url = 'file://' + html
+        p = Processor()
+        p.process(url)
+        eq_(p.inlines, [])
+
     def test_just_one_link(self):
         html = os.path.join(HERE, 'two.html')
         url = 'file://' + html
