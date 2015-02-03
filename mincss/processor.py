@@ -190,7 +190,11 @@ class Processor(object):
                         self._all_classes.add(class_)
 
         for style in CSSSelector('style')(page):
-            first_line = style.text.strip().splitlines()[0]
+            try:
+                first_line = style.text.strip().splitlines()[0]
+            except IndexError:
+                # meaning the inline style tag was just whitespace
+                continue
             for i, line in enumerate(lines):
                 if line.count(first_line):
                     key = (i + 1, url)
