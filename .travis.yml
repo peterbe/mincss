@@ -1,13 +1,32 @@
+# This indicates to Travis that we will not use or need sudo
+# so that we can benefit from and use the cache->directories
+# directive.
+sudo: no
+
+env: PIP_DOWNLOAD_CACHE="pip_cache"
+cache:
+  directories:
+  - pip_cache
+
 language: python
 
 python:
-    - "2.7"
-    - "3.3"
-    - "3.4"
+- '2.7'
+- '3.3'
+- '3.4'
 
 install:
-    - python setup.py --quiet install
+- python setup.py --quiet install
 
 script:
-    - nosetests
-    - mincss https://travis-ci.org
+- nosetests
+- mincss https://travis-ci.org
+
+deploy:
+  provider: pypi
+  user: peterbe
+  password:
+    secure: MWefB3EHYL8Nsoq0Fy0w+V0OFAOM4PKmYXxkYN/BAoMAYUTFbPm0CCNnafl72aQAKJkyuHXsYQf3dqRMtSPVkzMYJfniZ+LBxouk36v5+f2OXuMaSiLUug3nBAnNhMIyverWBBghF53IaKowyB/FzqC00U006K5aUzE6dFWEhF4=
+  on:
+    repo: peterbe/mincss
+  distributions: "sdist bdist_wheel"
