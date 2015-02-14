@@ -81,7 +81,7 @@ class Processor(object):
         self.phantomjs_options = phantomjs_options
         self._downloaded = {}
 
-    def _download(self, url):
+    def download(self, url):
         if url in self._downloaded:
             return self._downloaded[url]
         try:
@@ -98,7 +98,7 @@ class Processor(object):
         except IOError:
             raise IOError(url)
 
-    def _download_with_phantomjs(self, url):
+    def download_with_phantomjs(self, url):
         if self.phantomjs is True:
             # otherwise, assume it's a path
             self.phantomjs = 'phantomjs'
@@ -162,9 +162,9 @@ class Processor(object):
 
     def process_url(self, url):
         if self.phantomjs:
-            html = self._download_with_phantomjs(url)
+            html = self.download_with_phantomjs(url)
         else:
-            html = self._download(url)
+            html = self.download(url)
         self.process_html(html.strip(), url=url)
 
     def process_html(self, html, url):
@@ -212,7 +212,7 @@ class Processor(object):
             ):
                 link_url = self.make_absolute_url(url, link.attrib['href'])
                 key = (link_url, link.attrib['href'])
-                self.blocks[key] = self._download(link_url)
+                self.blocks[key] = self.download(link_url)
                 if self.preserve_remote_urls:
                     self.blocks[key] = self._rewrite_urls(
                         self.blocks[key],
