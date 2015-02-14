@@ -49,6 +49,13 @@ class TestMinCSS(unittest.TestCase):
         p.process(url)
         eq_(p.inlines, [])
 
+    def test_html_with_totally_empty_style_tag(self):
+        html = os.path.join(HERE, 'one-3.html')
+        url = 'file://' + html
+        p = Processor()
+        p.process(url)
+        eq_(p.inlines, [])
+
     def test_just_one_link(self):
         html = os.path.join(HERE, 'two.html')
         url = 'file://' + html
