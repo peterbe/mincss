@@ -195,6 +195,10 @@ class Processor(object):
             except IndexError:
                 # meaning the inline style tag was just whitespace
                 continue
+            except AttributeError:
+                # happend when the style tag has absolute nothing it
+                # not even whitespace
+                continue
             for i, line in enumerate(lines):
                 if line.count(first_line):
                     key = (i + 1, url)
