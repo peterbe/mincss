@@ -1,8 +1,9 @@
 #!/usr/bin/env python
+from __future__ import print_function
 import os
 import sys
 import time
-from __future__ import print_function
+
 
 # make sure it's running the mincss here and not anything installed
 sys.path.insert(0, os.path.dirname(__file__))
@@ -44,7 +45,7 @@ def run(args):
         before_name = 'before_' + link.href.split('/')[-1]
         with open(os.path.join(output_dir, before_name), 'w') as f:
             f.write(link.before.encode('utf-8'))
-        print("Files written to", output_dir
+        print("Files written to", output_dir)
         print()
         print(
             '(from %d to %d saves %d)' %
