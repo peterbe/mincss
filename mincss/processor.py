@@ -337,7 +337,6 @@ class Processor(object):
             )
 
         for temp_key, old, __ in inner_improvements:
-            assert old in content
             content = content.replace(old, temp_key)
 
         _regex = re.compile('((.*?){(.*?)})', re.DOTALL | re.M)
@@ -397,7 +396,6 @@ class Processor(object):
         fixed = _regex.sub(matcher, content)
 
         for temp_key, __, improved in inner_improvements:
-            assert temp_key in fixed
             fixed = fixed.replace(temp_key, improved)
         for temp_key, whole in comments:
             # note, `temp_key` might not be in the `fixed` thing because the
