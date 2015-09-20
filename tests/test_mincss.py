@@ -42,6 +42,20 @@ class TestMinCSS(unittest.TestCase):
         for i, line in enumerate(expect.strip().splitlines()):
             eq_(line.strip(), lines_after[i].strip())
 
+    def test_ignore_inline(self):
+        html = os.path.join(HERE, 'ignore-inline.html')
+        url = 'file://' + html
+        p = Processor()
+        p.process(url)
+        assert not p.inlines
+
+    def test_no_mincss_inline(self):
+        html = os.path.join(HERE, 'no-mincss-inline.html')
+        url = 'file://' + html
+        p = Processor()
+        p.process(url)
+        eq_(p.inlines[0].before, p.inlines[0].after)
+
     def test_html_with_empty_style_tag(self):
         html = os.path.join(HERE, 'one-2.html')
         url = 'file://' + html
@@ -75,6 +89,29 @@ class TestMinCSS(unittest.TestCase):
         '''
         for i, line in enumerate(expect.strip().splitlines()):
             eq_(line.strip(), lines_after[i].strip())
+
+    def test_no_mincss_link(self):
+        html = os.path.join(HERE, 'no-mincss-link.html')
+        url = 'file://' + html
+        p = Processor()
+        p.process(url)
+        link = p.links[0]
+        eq_(link.before, link.after)
+
+    def test_ignore_link(self):
+        html = os.path.join(HERE, 'ignore-link.html')
+        url = 'file://' + html
+        p = Processor()
+        p.process(url)
+        assert not p.links
+
+    def test_respect_link_order(self):
+        html = os.path.join(HERE, 'three-links.html')
+        url = 'file://' + html
+        p = Processor()
+        p.process(url)
+        hrefs = [x.href for x in p.links]
+        eq_(hrefs, ['two.css', 'three.css'])
 
     def test_one_link_two_different_pages(self):
         html = os.path.join(HERE, 'two.html')

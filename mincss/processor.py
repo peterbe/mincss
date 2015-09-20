@@ -26,6 +26,9 @@ except NameError:
     unicode = str
 
 
+INLINE = 'inline'
+LINK = 'link'
+
 RE_FIND_MEDIA = re.compile('(@media.+?)(\{)', re.DOTALL | re.MULTILINE)
 RE_NESTS = re.compile('@(-|keyframes).*?({)', re.DOTALL | re.M)
 RE_CLASS_DEF = re.compile('\.([\w-]+)')
@@ -136,22 +139,26 @@ class Processor(object):
         for url in urls:
             self.process_url(url)
 
-        for identifier in sorted(self.blocks.keys(), key=lambda x: str(x[0])):
+        for identifier in sorted(self.blocks.keys()):
             content = self.blocks[identifier]
             processed = self._process_content(content, self._bodies)
 
-            if isinstance(identifier[0], int):
-                line, url = identifier
+            if identifier[1] == INLINE:
+                line, _, url, no_mincss = identifier
+                if no_mincss:
+                    processed = content
                 self.inlines.append(
                     InlineResult(
                         line,
                         url,
                         content,
-                        processed
+                        processed,
                     )
                 )
             else:
-                url, href = identifier
+                _, _, url, href, no_mincss = identifier
+                if no_mincss:
+                    processed = content
                 self.links.append(
                     LinkResult(
                         href,
@@ -199,19 +206,44 @@ class Processor(object):
                 # happend when the style tag has absolute nothing it
                 # not even whitespace
                 continue
-            for i, line in enumerate(lines):
+            no_mincss = False
+            try:
+                data_attrib = style.attrib['data-mincss'].lower()
+                if data_attrib == 'ignore':
+                    continue
+                elif data_attrib == 'no':
+                    no_mincss = True
+
+            except KeyError:
+                # happens if the attribute key isn't there
+                pass
+
+            for i, line in enumerate(lines, start=1):
                 if line.count(first_line):
-                    key = (i + 1, url)
+                    key = (i, INLINE, url, no_mincss)
                     self.blocks[key] = style.text
                     break
 
+        i = 0
         for link in CSSSelector('link')(page):
             if (
                 link.attrib.get('rel', '') == 'stylesheet' or
                 link.attrib['href'].lower().split('?')[0].endswith('.css')
             ):
+                no_mincss = False
+                try:
+                    data_attrib = link.attrib['data-mincss'].lower()
+                    if data_attrib == 'ignore':
+                        continue
+                    if data_attrib == 'no':
+                        no_mincss = True
+                except KeyError:
+                    # happens if the attribute key isn't there
+                    pass
+
                 link_url = self.make_absolute_url(url, link.attrib['href'])
-                key = (link_url, link.attrib['href'])
+                key = (i, LINK, link_url, link.attrib['href'], no_mincss)
+                i += 1
                 self.blocks[key] = self.download(link_url)
                 if self.preserve_remote_urls:
                     self.blocks[key] = self._rewrite_urls(
@@ -337,6 +369,7 @@ class Processor(object):
             )
 
         for temp_key, old, __ in inner_improvements:
+            assert old in content
             content = content.replace(old, temp_key)
 
         _regex = re.compile('((.*?){(.*?)})', re.DOTALL | re.M)
@@ -396,6 +429,7 @@ class Processor(object):
         fixed = _regex.sub(matcher, content)
 
         for temp_key, __, improved in inner_improvements:
+            assert temp_key in fixed
             fixed = fixed.replace(temp_key, improved)
         for temp_key, whole in comments:
             # note, `temp_key` might not be in the `fixed` thing because the
