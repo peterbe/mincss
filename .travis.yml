@@ -37,7 +37,7 @@ install:
 
 script:
 - nosetests
-- mincss https://travis-ci.org
+- mincss https://news.ycombinator.com
 
 deploy:
   provider: pypi

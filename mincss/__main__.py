@@ -2,7 +2,7 @@
 
 import sys
 
-from . import main
+from mincss import main
 
 
 if __name__ == '__main__':
