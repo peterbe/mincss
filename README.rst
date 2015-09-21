@@ -71,3 +71,26 @@ this for example:
     }
 
 That tells ``mincss`` to ignore the whole block and all its selectors.
+
+Ignore CSS
+----------
+
+By default, ``mincss`` will find all ``<link rel="stylesheet" ...`` and
+``<style...>`` tags and process them. If you have a link or an inline
+tag that you don't want ``mincss`` to even notice, simply add this attribute
+to the tag:
+
+::
+
+    data-mincss="ignore"
+
+Leave CSS as is
+---------------
+
+One technique to have a specific CSS selector be ignored by ``mincss`` is to
+put in a comment like ``/* no mincss */`` inside the CSS selectors
+block.
+
+Another way is to leave the whole stylesheet as is. The advantage of doing
+this is if you have a ``link`` or ``style`` tag that you want ``mincss``
+to ignore but still find and include in the parsed result.
