@@ -33,6 +33,9 @@ RE_FIND_MEDIA = re.compile('(@media.+?)(\{)', re.DOTALL | re.MULTILINE)
 RE_NESTS = re.compile('@(-|keyframes).*?({)', re.DOTALL | re.M)
 RE_CLASS_DEF = re.compile('\.([\w-]+)')
 RE_ID_DEF = re.compile('#([\w-]+)')
+MOUSE_PSEUDO_CLASSES = re.compile(
+    ':(link|hover|active|focus|visited)$', re.M | re.I
+)
 
 
 EXCEPTIONAL_SELECTORS = (
@@ -477,7 +480,9 @@ class Processor(object):
         return r
 
     def _selector_query_found(self, bodies, selector):
-        selector = selector.split(':')[0]
+        # If the select has something like :active or :hover
+        if MOUSE_PSEUDO_CLASSES.findall(selector) or '::' in selector:
+            selector = selector.split(':')[0]
 
         if '}' in selector:
             # XXX does this ever happen any more?

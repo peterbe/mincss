@@ -39,6 +39,10 @@ script:
 - nosetests
 - mincss https://news.ycombinator.com
 
+branches:
+  only:
+    - master
+
 deploy:
   provider: pypi
   user: peterbe
