@@ -314,3 +314,23 @@ class TestMinCSS(unittest.TestCase):
             p.make_absolute_url('http://www.com/elsewhere', './style.css'),
             'http://www.com/style.css'
         )
+
+    def test_nth_child(self):
+        html = os.path.join(HERE, 'nth-child.html')
+        url = 'file://' + html
+        p = Processor()
+        p.process(url)
+        # print repr(p.inlines[0].before)
+        after = p.inlines[0].after
+        # These mouse related one should stay, even though they're
+        # currently NOT being acted upon with some input device.
+        ok_('a.actually:hover { font-weight: bold; }' in after)
+        ok_('a.actually:visited { font-weight: bold; }' in after)
+        ok_('a.actually:link { font-weight: bold; }' in after)
+        ok_('a.actually:focus { font-weight: bold; }' in after)
+        ok_('a.actually:active { font-weight: bold; }' in after)
+        # the other selectors with : in them should also stay
+        ok_('div > :first-child { color: pink; }' in after)
+        ok_('div > :last-child { color: brown; }' in after)
+        ok_('div > :not(p) { color: blue; }' in after)
+        ok_('div > :nth-child(2) { color: red; }' in after)

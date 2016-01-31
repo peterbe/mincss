@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <title>test page</title>
+    <style>
+      a.nothere:hover { font-weight: bold; }
+      a.actually:hover { font-weight: bold; }
+
+      a.nothere:active { font-weight: bold; }
+      a.actually:active { font-weight: bold; }
+
+      a.nothere:link { font-weight: bold; }
+      a.actually:link { font-weight: bold; }
+
+      a.nothere:focus { font-weight: bold; }
+      a.actually:focus { font-weight: bold; }
+
+      a.nothere:visited { font-weight: bold; }
+      a.actually:visited { font-weight: bold; }
+
+      div > :first-child { color: pink; }
+      div > :last-child { color: brown; }
+      div > :not(p) { color: blue; }
+      div > :nth-child(2) { color: red; }
+    </style>
+  </head>
+  <body>
+    <h1>h1</h1>
+    <a href="@" class="actually">actually</a>
+    <div>
+      <p>First one</p>
+      <p>Second one</p>
+      <p>Third one</p>
+      <span>Fourth one</span>
+      <p>Fifth one</p>
+    </div>
+
+  </body>
+</html>
