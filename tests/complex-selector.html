@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset='utf-8'>
+    <title>test page</title>
+    <style>
+      a[href^="javascript:"] { color: pink; }
+      a[href^="javascript:"]:after { content: "x"; }
+    </style>
+  </head>
+  <body>
+    <h1>h1</h1>
+    <a href="javascript:alert('hi')">actually</a>
+
+  </body>
+</html>

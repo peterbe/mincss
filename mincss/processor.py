@@ -495,9 +495,11 @@ class Processor(object):
             except SelectorSyntaxError:
                 print('TROUBLEMAKER', file=sys.stderr)
                 print(repr(selector), file=sys.stderr)
+                return True  # better be safe and let's keep it
             except ExpressionError:
                 print('EXPRESSIONERROR', file=sys.stderr)
                 print(repr(selector), file=sys.stderr)
+                return True  # better be safe and let's keep it
         return False
 
     @staticmethod
