@@ -320,7 +320,6 @@ class TestMinCSS(unittest.TestCase):
         url = 'file://' + html
         p = Processor()
         p.process(url)
-        # print repr(p.inlines[0].before)
         after = p.inlines[0].after
         # These mouse related one should stay, even though they're
         # currently NOT being acted upon with some input device.
@@ -334,3 +333,12 @@ class TestMinCSS(unittest.TestCase):
         ok_('div > :last-child { color: brown; }' in after)
         ok_('div > :not(p) { color: blue; }' in after)
         ok_('div > :nth-child(2) { color: red; }' in after)
+
+    def test_complex_colons_in_selector_expression(self):
+        html = os.path.join(HERE, 'complex-selector.html')
+        url = 'file://' + html
+        p = Processor()
+        p.process(url)
+        after = p.inlines[0].after
+        ok_('a[href^="javascript:"] { color: pink; }' in after)
+        ok_('a[href^="javascript:"]:after { content: "x"; }' in after)
