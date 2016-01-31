@@ -36,6 +36,9 @@ RE_ID_DEF = re.compile('#([\w-]+)')
 MOUSE_PSEUDO_CLASSES = re.compile(
     ':(link|hover|active|focus|visited)$', re.M | re.I
 )
+BEFOREAFTER_PSEUDO_CLASSES = re.compile(
+    ':(before|after)$', re.M | re.I
+)
 
 
 EXCEPTIONAL_SELECTORS = (
@@ -480,8 +483,13 @@ class Processor(object):
         return r
 
     def _selector_query_found(self, bodies, selector):
-        # If the select has something like :active or :hover
-        if MOUSE_PSEUDO_CLASSES.findall(selector) or '::' in selector:
+        # If the select has something like :active or :hover,
+        # then evaluate it as if it's without that pseudo class
+        if (
+            MOUSE_PSEUDO_CLASSES.findall(selector) or
+            '::' in selector or
+            BEFOREAFTER_PSEUDO_CLASSES.findall(selector)
+        ):
             selector = selector.split(':')[0]
 
         if '}' in selector:
