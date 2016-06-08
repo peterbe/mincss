@@ -39,7 +39,9 @@ MOUSE_PSEUDO_CLASSES = re.compile(
 BEFOREAFTER_PSEUDO_CLASSES = re.compile(
     ':(before|after)$', re.M | re.I
 )
-
+VENDOR_PREFIXED_PSEUDO_CLASSES = re.compile(
+    ':-(webkit|moz)-'
+)
 
 EXCEPTIONAL_SELECTORS = (
     'html',
@@ -488,9 +490,10 @@ class Processor(object):
         if (
             MOUSE_PSEUDO_CLASSES.findall(selector) or
             '::' in selector or
-            BEFOREAFTER_PSEUDO_CLASSES.findall(selector)
+            BEFOREAFTER_PSEUDO_CLASSES.findall(selector) or
+            VENDOR_PREFIXED_PSEUDO_CLASSES.findall(selector)
         ):
-            selector = selector.split(':')[0]
+            selector = selector.split(':')[0].strip()
 
         if '}' in selector:
             # XXX does this ever happen any more?
