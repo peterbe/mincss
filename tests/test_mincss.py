@@ -153,6 +153,10 @@ class TestMinCSS(unittest.TestCase):
 
         ok_('input[type="search"]::-webkit-search-decoration' in after)
         ok_('input[type="reset"]::-webkit-search-decoration' not in after)
+        ok_('input[type="search"]::-webkit-search-decoration' in after)
+
+        ok_('textarea:-moz-autofill' not in after)
+        ok_(':-moz-autofill' not in after)
 
         ok_('@media (max-width: 900px)' in after)
         ok_('.container .two' in after)

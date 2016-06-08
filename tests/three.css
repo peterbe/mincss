@@ -14,11 +14,14 @@ input[type="button"]
   color: #999999;
 }
 
+input[type="search"]:-webkit-autofill,
+input[type="reset"]:-webkit-autofill,
 input[type="search"]::-webkit-search-decoration,
 input[type="reset"]::-webkit-search-decoration,
 {
   -webkit-appearance: none;
 }
+textarea:-moz-autofill { foo: bar; }
 
 /* A comment */
 @media (max-width: 900px) {
