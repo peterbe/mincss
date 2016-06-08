@@ -32,6 +32,7 @@ LINK = 'link'
 RE_FIND_MEDIA = re.compile('(@media.+?)(\{)', re.DOTALL | re.MULTILINE)
 RE_NESTS = re.compile('@(-|keyframes).*?({)', re.DOTALL | re.M)
 RE_CLASS_DEF = re.compile('\.([\w-]+)')
+RE_SELECTOR_TAGS = re.compile('(^|\s)(\w+)')
 RE_ID_DEF = re.compile('#([\w-]+)')
 MOUSE_PSEUDO_CLASSES = re.compile(
     ':(link|hover|active|focus|visited)$', re.M | re.I
@@ -88,6 +89,7 @@ class Processor(object):
         self.optimize_lookup = optimize_lookup
         self._all_ids = set()
         self._all_classes = set()
+        self._all_tags = set()
         self.phantomjs = phantomjs
         self.phantomjs_options = phantomjs_options
         self._downloaded = {}
@@ -182,6 +184,21 @@ class Processor(object):
             html = self.download(url)
         self.process_html(html.strip(), url=url)
 
+    def _find_all_ids_classes_and_tags(self, element):
+        for each in element:
+            identifier = each.attrib.get('id')
+            if identifier:
+                self._all_ids.add(identifier)
+            classes = each.attrib.get('class')
+            if classes:
+                for class_ in classes.split():
+                    self._all_classes.add(class_)
+
+            self._all_tags.add(each.tag)
+
+            # recurse!
+            self._find_all_ids_classes_and_tags(each)
+
     def process_html(self, html, url):
         parser = etree.HTMLParser(encoding='utf-8')
         tree = etree.fromstring(html.encode('utf-8'), parser).getroottree()
@@ -195,14 +212,8 @@ class Processor(object):
         body, = CSSSelector('body')(page)
         self._bodies.append(body)
         if self.optimize_lookup:
-            for each in body.iter():
-                identifier = each.attrib.get('id')
-                if identifier:
-                    self._all_ids.add(identifier)
-                classes = each.attrib.get('class')
-                if classes:
-                    for class_ in classes.split():
-                        self._all_classes.add(class_)
+            self._all_tags.add('body')
+            self._find_all_ids_classes_and_tags(body)
 
         for style in CSSSelector('style')(page):
             try:
@@ -404,18 +415,25 @@ class Processor(object):
                 s = selector.strip()
                 if s in EXCEPTIONAL_SELECTORS:
                     continue
+                simplified = self._simplified_selector(s)
 
-                if s in _already_found:
+                if simplified.endswith('>'):
+                    # Things like "foo.bar > :first-child" is valid,
+                    # but once simplified you're left with
+                    # "foo.bar >" which can never be found because
+                    # it's an invalid selector. Best to avoid.
                     found = True
-                elif s in _already_tried:
+                elif simplified in _already_found:
+                    found = True
+                elif simplified in _already_tried:
                     found = False
                 else:
-                    found = self._found(bodies, s)
+                    found = self._found(bodies, simplified)
 
                 if found:
-                    _already_found.add(s)
+                    _already_found.add(simplified)
                 else:
-                    _already_tried.add(s)
+                    _already_tried.add(simplified)
                     perfect = False
                     improved = re.sub(
                         '%s,?\s*' % re.escape(s),
@@ -481,23 +499,40 @@ class Processor(object):
                     # don't bother then
                     return False
 
-        r = self._selector_query_found(bodies, selector)
-        return r
+        # If the last part of the selector is a tag like
+        # ".foo blockquote" or "sometag" then we can look for it
+        # in plain HTML as a form of optimization
+        last_part = selector.split()[-1]
+        # if self._all_tags and '"' not in selector:
+        if not re.findall('[^\w \.]', selector):
+            # It's a trivial selector. Like "tag.myclass",
+            # or ".one.two". Let's look for some cheap wins
+            if self._all_tags:
+                # If the selector is quite simple, we can fish out
+                # all tags mentioned in it and do a quick lookup using
+                # simply the tag name.
+                for prefix, tag in RE_SELECTOR_TAGS.findall(selector):
+                    if tag not in self._all_tags:
+                        # If the tag doesn't even exist in the HTML,
+                        # don't bother.
+                        return False
 
-    def _selector_query_found(self, bodies, selector):
+        return self._selector_query_found(bodies, selector)
+
+    @staticmethod
+    def _simplified_selector(selector):
         # If the select has something like :active or :hover,
         # then evaluate it as if it's without that pseudo class
-        if (
-            MOUSE_PSEUDO_CLASSES.findall(selector) or
-            '::' in selector or
-            BEFOREAFTER_PSEUDO_CLASSES.findall(selector) or
-            VENDOR_PREFIXED_PSEUDO_CLASSES.findall(selector)
-        ):
-            selector = selector.split(':')[0].strip()
+        return selector.split(':')[0].strip()
 
+    def _selector_query_found(self, bodies, selector):
         if '}' in selector:
             # XXX does this ever happen any more?
             return
+
+        if selector.endswith('>'):
+            # It's
+            return False
 
         for body in bodies:
             try:

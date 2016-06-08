@@ -1,3 +1,0 @@
-#!/bin/bash
-echo "After this is started, run './run_mincss' from this same directory"
-python -m SimpleHTTPServer 9000
