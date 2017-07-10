@@ -10,7 +10,7 @@ actually not used in your HTML.
 
 By Peter Bengtsson, 2012-2017
 
-Tested in Python 2.7, 3.3 and 3.4
+Tested in Python 2.7, 3.3, 3.4 and 3.5
 
 Example
 -------
