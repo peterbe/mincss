@@ -114,11 +114,13 @@ class Processor(object):
     def download_with_phantomjs(self, url):
         if self.phantomjs is True:
             # otherwise, assume it's a path
-            self.phantomjs = 'phantomjs'
+            phantomjs = 'phantomjs'
         elif not os.path.isfile(self.phantomjs):
             raise IOError('%s is not a path to phantomjs' % self.phantomjs)
+        else:
+            phantomjs = self.phantomjs
 
-        command = [self.phantomjs]
+        command = [phantomjs]
         if self.phantomjs_options:
             if 'load-images' not in self.phantomjs_options:
                 # not entirely sure if this helps but there can't be any point
