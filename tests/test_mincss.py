@@ -355,3 +355,16 @@ class TestMinCSS(unittest.TestCase):
         after = p.inlines[0].after
         ok_('ul li:after { content: "x"; }' not in after)
         ok_('ol li:before { content: "x"; }' in after)
+
+    def test_duplicate_media_queries(self):
+        """if two media queries look exactly the same, it shouldn't fail.
+
+        This is kinda hackish but it desperately tries to solve
+        https://github.com/peterbe/mincss/issues/46
+        """
+        html = os.path.join(HERE, 'duplicate-media-queries.html')
+        url = 'file://' + html
+        p = Processor()
+        p.process(url)
+        snippet = '@media screen and (min-width: 600px) {'
+        eq_(p.inlines[0].after.count(snippet), 2)

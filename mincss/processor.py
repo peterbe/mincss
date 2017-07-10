@@ -391,7 +391,7 @@ class Processor(object):
 
         for temp_key, old, __ in inner_improvements:
             assert old in content, old
-            content = content.replace(old, temp_key)
+            content = content.replace(old, temp_key, 1)
 
         _regex = re.compile('((.*?){(.*?)})', re.DOTALL | re.M)
 
