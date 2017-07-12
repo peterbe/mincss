@@ -3,6 +3,7 @@ from __future__ import print_function
 import os
 import sys
 import time
+import codecs
 
 
 # make sure it's running the mincss here and not anything installed
@@ -40,11 +41,11 @@ def run(args):
         #print("AFTER ".ljust(79, '-'))
         #print(link.after)
         orig_name = link.href.split('/')[-1]
-        with open(os.path.join(output_dir, orig_name), 'w') as f:
+        with codecs.open(os.path.join(output_dir, orig_name), 'w') as f:
             f.write(link.after)
         before_name = 'before_' + link.href.split('/')[-1]
-        with open(os.path.join(output_dir, before_name), 'w') as f:
-            f.write(link.before.encode('utf-8'))
+        with codecs.open(os.path.join(output_dir, before_name), 'w') as f:
+            f.write(link.before)
         print("Files written to", output_dir)
         print()
         print(
