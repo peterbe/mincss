@@ -41,10 +41,12 @@ def run(args):
         #print("AFTER ".ljust(79, '-'))
         #print(link.after)
         orig_name = link.href.split('/')[-1]
-        with codecs.open(os.path.join(output_dir, orig_name), 'w') as f:
+        fn = os.path.join(output_dir, orig_name)
+        with codecs.open(fn, 'w', 'utf-8') as f:
             f.write(link.after)
         before_name = 'before_' + link.href.split('/')[-1]
-        with codecs.open(os.path.join(output_dir, before_name), 'w') as f:
+        fn = os.path.join(output_dir, before_name)
+        with codecs.open(fn, 'w', 'utf-8') as f:
             f.write(link.before)
         print("Files written to", output_dir)
         print()
