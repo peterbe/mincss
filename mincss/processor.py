@@ -43,6 +43,12 @@ BEFOREAFTER_PSEUDO_CLASSES = re.compile(
 VENDOR_PREFIXED_PSEUDO_CLASSES = re.compile(
     ':-(webkit|moz)-'
 )
+# For matching things like "foo:bar" and '"foo:ing":bar' because it's
+# not enough to just do a split on ':' since the ':' might be inside
+# quotation marks. E.g. 'a[href^="javascript:"]'
+PSEUDO_SELECTOR = re.compile(
+    r':(?=([^"\'\\]*(\\.|["\']([^"\'\\]*\\.)*[^"\'\\]*[\'"]))*[^"\']*$)'
+)
 
 EXCEPTIONAL_SELECTORS = (
     'html',
@@ -504,8 +510,6 @@ class Processor(object):
         # If the last part of the selector is a tag like
         # ".foo blockquote" or "sometag" then we can look for it
         # in plain HTML as a form of optimization
-        last_part = selector.split()[-1]
-        # if self._all_tags and '"' not in selector:
         if not re.findall('[^\w \.]', selector):
             # It's a trivial selector. Like "tag.myclass",
             # or ".one.two". Let's look for some cheap wins
@@ -525,7 +529,7 @@ class Processor(object):
     def _simplified_selector(selector):
         # If the select has something like :active or :hover,
         # then evaluate it as if it's without that pseudo class
-        return selector.split(':')[0].strip()
+        return PSEUDO_SELECTOR.split(selector)[0].strip()
 
     def _selector_query_found(self, bodies, selector):
         if '}' in selector:

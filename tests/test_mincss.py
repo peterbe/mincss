@@ -346,6 +346,8 @@ class TestMinCSS(unittest.TestCase):
         after = p.inlines[0].after
         ok_('a[href^="javascript:"] { color: pink; }' in after)
         ok_('a[href^="javascript:"]:after { content: "x"; }' in after)
+        ok_('.ui[class*="4:3"].embed' in after)
+        ok_('.ui[class*="6:9"].embed' not in after)
 
     def test_before_after(self):
         html = os.path.join(HERE, 'before-after.html')

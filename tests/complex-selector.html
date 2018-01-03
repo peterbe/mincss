@@ -6,11 +6,20 @@
     <style>
       a[href^="javascript:"] { color: pink; }
       a[href^="javascript:"]:after { content: "x"; }
+      .ui[class*="4:3"].embed {
+        padding-bottom: 75%;
+      }
+      .ui[class*="6:9"].embed {
+        padding-bottom: 95%;
+      }
     </style>
   </head>
   <body>
     <h1>h1</h1>
     <a href="javascript:alert('hi')">actually</a>
 
+    <div class="ui embed 4:3">
+      Stuff
+    </div>
   </body>
 </html>
