@@ -159,12 +159,14 @@ class Processor(object):
 
         for identifier in sorted(self.blocks.keys()):
             content = self.blocks[identifier]
-            processed = self._process_content(content, self._bodies)
+            no_mincss = identifier[-1]
+            if no_mincss:
+                processed = content
+            else:
+                processed = self._process_content(content, self._bodies)
 
             if identifier[1] == INLINE:
-                line, _, url, no_mincss = identifier
-                if no_mincss:
-                    processed = content
+                line, _, url, _ = identifier
                 self.inlines.append(
                     InlineResult(
                         line,
@@ -174,9 +176,7 @@ class Processor(object):
                     )
                 )
             else:
-                _, _, url, href, no_mincss = identifier
-                if no_mincss:
-                    processed = content
+                _, _, url, href, _ = identifier
                 self.links.append(
                     LinkResult(
                         href,
