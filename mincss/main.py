@@ -4,10 +4,14 @@ import io
 import os
 import time
 
+from mincss import __version__
 from .processor import Processor
 
 
 def run(args):
+    if args.version:
+        print(__version__)
+        return
     options = {'debug': args.verbose}
     if args.phantomjs_path:
         options['phantomjs'] = args.phantomjs_path
@@ -64,6 +68,9 @@ def main():
     add('--phantomjs-path', action='store',
         default='',
         help='Where is the phantomjs executable')
+    add('--version', action='store_true',
+        default=False,
+        help='Prints out the version of mincss')
 
     args = parser.parse_args()
     return run(args) or 0
